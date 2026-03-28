@@ -1,0 +1,55 @@
+:root {
+  --sand: #F5EFE0;
+  --ink: #1A1A18;
+  --terracotta: #C45E3E;
+  --sage: #7A9E7E;
+  --mist: #D6DDD8;
+  --gold: #C8A96E;
+ }
+ 
+ body {
+    background-color: var(--sand);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+ }
+
+ h1,h2,h3 .font-serif {
+    font-family: 'Playfair Display', serif; 
+ }
+ 
+ /* Navigation Bar */
+    .navbar {
+        background-color: rgba(245, 239, 224, 0.9) !important;
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(26, 26, 26, 0.08)
+    }
+    .navbar-brand {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5rem;
+        color: var(--ink) !important;
+    }
+
+    .navbar-brand span {
+        color: var(--terracotta);
+        font-style: italic;
+    }
+
+    .nav-link {
+        color: rgba(26, 26, 24, 0.65)!important;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .nav-link:hover {color:var(--ink) !important;}
+
+    .btn-nav {
+        background-color: var(--ink);
+        color: white !important;
+        border-radius: 2rem;
+        padding: 0.45rem 1.3rem;
+        font-size: 0.88rem;
+    }
+
+    .btn-nav:hover {background-color: var(--terracotta);}
+
+    
