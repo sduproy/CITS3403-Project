@@ -196,4 +196,19 @@
     .map-pin.p2 {background: var(--gold); top: 110px; left: 150px;}
     .map-pin.p3 {background: var(--sage); top: 70px; left: 230px;}
 
-    .map-route {}
+    .map-route {
+        position: absolute;
+        top: 62px; left: 77px;
+        width: 160px; height: 55px;
+        border: 2px dashed rgba(196, 94, 62, 0.4);
+        border-bottom: none;
+        border-left: none;
+        border-radius: 0 40px 0 0;
+    }
+
+    .stop-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: inline-block;
+    }
