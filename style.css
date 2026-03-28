@@ -125,4 +125,21 @@
         transition: opacity 0.2s
     }
 
-    .btn-ghost-custom
+    .btn-ghost-custom:hover {opacity: 1; color: var(--ink);}
+
+    /*HERO*/
+    .hero {
+        min-height: 100vh;
+        padding-top: 6rem;
+        background-color: var(--sand);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: -100px; right: -100px;
+        width: 500px; height: 500px;
+        
+    }
