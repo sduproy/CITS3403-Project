@@ -63,7 +63,7 @@
         background: white;
         border-radius: 2rem;
         padding: 0.5rem 0.5rem 0.5rem 1.4rem;
-        box-shadow: 0.4px 32px rgba(26, 26, 24, 0.1);
+        box-shadow: 0 4px 32px rgba(26, 26, 24, 0.1);
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -110,7 +110,7 @@
 
     .btn-primary-custom: hover {
         transform: translateY(-2px)
-        box-shadow: 0.8px 24px rgba(196, 94, 62, 0.3);
+        box-shadow: 0 8px 24px rgba(196, 94, 62, 0.3);
     }
 
     .btn-ghost-custom {
@@ -141,5 +141,59 @@
         position: absolute;
         top: -100px; right: -100px;
         width: 500px; height: 500px;
-        
+        border-radius: 50%;
+        background: radial-gradient (circle, rgba(196, 94, 62, 0.1), transparent 70%);
+        pointer-events: none;
     }
+
+    .hero-eyebrow {
+        font-size: 0.78rem;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--terracotta)
+    }
+
+    .hero h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        line-height: 1.1;
+        color: var(--ink);
+    }
+    
+    .hero h1 em {color: var(--terracotta)}
+
+    .hero-sub {
+        font-size: 1.05rem;
+        line-height: 1.7;
+        color: rgba(26, 26, 24, 0.6)
+    }
+
+    /*Itinerary card*/
+    .itinerary-card {
+        border-radius: 1.5rem;
+        overflow: hidden;
+        box-shadow: 0 8px 48px rgba(26, 26, 24, 0.12);
+        animation: float 6s ease-in-out infinite
+    }
+
+    .map-bg {
+        height: 180px;
+        background:
+            repeating-linear-gradient(0deg, rgba(122, 158, 126, 0.08) 0px, rgba(122, 158, 126, 0.08) 1px, transparent 1px, transparent 40px),
+            repeating-linear-gradient(90deg, rgba(122, 158, 126, 0.08) 0px, rgba(122, 158, 126, 0.08) 1px, transparent 1px, transparent 40px),
+            linear-gradient (135deg, #e8f0e9, #d6e4d8);
+        position: relative;
+    }
+
+    .map-pin {
+        position: absolute;
+        width: 14px; height: 14px;
+        border-radius: 50%;
+        border: 2px solide white;
+    }
+
+    .map-pin.p1 {background: var(--terracotta); top: 55px; left: 70px;}
+    .map-pin.p2 {background: var(--gold); top: 110px; left: 150px;}
+    .map-pin.p3 {background: var(--sage); top: 70px; left: 230px;}
+
+    .map-route {}
