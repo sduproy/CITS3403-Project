@@ -212,3 +212,42 @@
         flex-shrink: 0;
         display: inline-block;
     }
+
+    /*Mini Cards*/
+    .mini-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 0.9rem 1.1rem;
+        box-shadow: 0 4px 24px rgba(26, 26, 24, 0.1);
+        font-size: 0.82rem;
+        animation: float 6s ease-in-out infinite;
+        display: inline-block;
+    }
+
+    .mini-card.mc1 {animation-delay: -2s;}
+    .mini-card.mc2 {animation-delay: -4s;}
+
+    .mini-label {
+        font-size: 0.7rem;
+        color: rgba(26, 26, 24, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .mini-value {font-weight: 500; color: var(--ink);}
+    
+    .mini-badge {
+        background: rgba (122, 158, 126, 0.15);
+        color: var(--sage);
+        border-radius: 1rem;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.72rem;
+        font-weight: 500;
+    }
+
+    @keyframes float {
+        0%, 100% {transform: translateY(0);}
+        50% {transform: translateY(-10px)}
+    }
+
+    
