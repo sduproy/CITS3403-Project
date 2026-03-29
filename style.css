@@ -94,7 +94,7 @@
 
     .search-wrap .btn:hover {background-color: var(--terracotta); color:white;}
 
-    /*BUTTONS*/
+/*BUTTONS*/
     .btn-primary-custom {
         background-color: var(--terracotta);
         color: white;
@@ -127,7 +127,7 @@
 
     .btn-ghost-custom:hover {opacity: 1; color: var(--ink);}
 
-    /*HERO*/
+/*HERO*/
     .hero {
         min-height: 100vh;
         padding-top: 6rem;
@@ -168,7 +168,7 @@
         color: rgba(26, 26, 24, 0.6)
     }
 
-    /*Itinerary card*/
+/*Itinerary card*/
     .itinerary-card {
         border-radius: 1.5rem;
         overflow: hidden;
@@ -213,7 +213,7 @@
         display: inline-block;
     }
 
-    /*Mini Cards*/
+/*Mini Cards*/
     .mini-card {
         background: white;
         border-radius: 1rem;
@@ -250,4 +250,5 @@
         50% {transform: translateY(-10px)}
     }
 
+    
     
