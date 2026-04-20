@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard · SmartVoyage{% endblock %}
+
+{% block content %}
+<section class="tp-section">
+  <div class="container" style="max-width:760px;">
+
+    <div class="tp-dashboard-header">
+      <h2>Admin Dashboard</h2>
+      <p class="tp-text-muted mb-0">Signed in as {{ g.user.username }} (admin).</p>
+    </div>
+
+    {# Empty state — admin tooling (user management, review moderation) lands in a later branch #}
+    <div class="tp-empty">
+      <div class="tp-empty-icon"><i class="bi bi-shield-lock"></i></div>
+      <h5>Admin tools coming soon</h5>
+      <p>User management, itinerary oversight, and review moderation will live here.</p>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

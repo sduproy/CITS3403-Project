@@ -31,6 +31,22 @@ def login_required(view):
     return wrapped_view
 
 
+def admin_required(view):
+    """Gate a view to users with role == 'admin'. Anon users get sent to login."""
+
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            flash("Please log in to access this page.", "error")
+            return redirect(url_for("main.login", next=request.path))
+        if g.user["role"] != "admin":
+            flash("Admin access required.", "error")
+            return redirect(url_for("main.index"))
+        return view(**kwargs)
+
+    return wrapped_view
+
+
 @main.before_app_request
 def load_logged_in_user():
     user_id = session.get("user_id")
@@ -120,8 +136,7 @@ def login():
             return redirect(next_url)
 
         if user["role"] == "admin":
-            # M5 will flip this to url_for("main.admin_dashboard").
-            return redirect(url_for("main.index"))
+            return redirect(url_for("main.admin_dashboard"))
         return redirect(url_for("main.dashboard"))
 
     return render_template("login.html")
@@ -140,6 +155,11 @@ def dashboard():
     return render_template("dashboard.html")
 
 
+@main.route("/admin")
+@admin_required
+def admin_dashboard():
+    return render_template("admin_dashboard.html")
+
+
 # Route stubs to add as features land:
-#   /admin                                   (M5 — admin dashboard)
 #   /itinerary/new, /itinerary/<int:id>      (AI generation + detail page)
