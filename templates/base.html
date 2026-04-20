@@ -25,7 +25,7 @@
         <li class="nav-item"><a class="nav-link {% if request.endpoint == 'main.community' %}active{% endif %}" href="{{ url_for('main.community') }}">Community</a></li>
         <li class="nav-item"><a class="nav-link" href="#">My Itineraries</a></li>
         <li class="nav-item"><a class="nav-link" href="#">Login</a></li>
-        <li class="nav-item ms-lg-2"><a class="btn btn-tp-dark" href="#">Register</a></li>
+        <li class="nav-item ms-lg-2"><a class="btn btn-tp-dark" href="{{ url_for('main.register') }}">Register</a></li>
       </ul>
     </div>
   </div>
@@ -58,7 +58,7 @@
       <div class="col-md-4 mb-3">
         <h6 class="text-white mb-2">Account</h6>
         <a href="#" class="d-block mb-1">Login</a>
-        <a href="#" class="d-block mb-1">Register</a>
+        <a href="{{ url_for('main.register') }}" class="d-block mb-1">Register</a>
       </div>
     </div>
     <hr style="border-color:rgba(255,255,255,0.15);">

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account · SmartVoyage{% endblock %}
+
+{% block content %}
+<section class="tp-section tp-bg-teal-lt">
+  <div class="container">
+    <div class="d-flex justify-content-center">
+      <div class="tp-auth-card">
+        <h2>Create Account</h2>
+        <form method="POST" action="{{ url_for('main.register') }}" novalidate>
+          <div class="mb-3">
+            <label for="username" class="form-label" style="font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--tp-gray-500);">Username</label>
+            <input type="text" id="username" name="username"
+                   class="form-control tp-input" required minlength="3" maxlength="30"
+                   placeholder="Pick a username"
+                   value="{{ request.form.username or '' }}">
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label" style="font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--tp-gray-500);">Email</label>
+            <input type="email" id="email" name="email"
+                   class="form-control tp-input" required
+                   placeholder="you@example.com"
+                   value="{{ request.form.email or '' }}">
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label" style="font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--tp-gray-500);">Password</label>
+            <input type="password" id="password" name="password"
+                   class="form-control tp-input" required minlength="6"
+                   placeholder="At least 6 characters">
+          </div>
+          <button type="submit" class="btn btn-tp-coral w-100 mb-3">Register</button>
+          <p class="text-center mb-0" style="font-size:0.9rem;">
+            Already have an account? <a href="#">Log in</a>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
