@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}My Itineraries · SmartVoyage{% endblock %}
+
+{% block content %}
+<section class="tp-section">
+  <div class="container" style="max-width:760px;">
+
+    <div class="tp-dashboard-header">
+      <h2>My Itineraries</h2>
+      <p class="tp-text-muted mb-0">Welcome back, {{ g.user.username }}.</p>
+    </div>
+
+    {# Empty state — placeholder until itinerary save/list lands in a later branch #}
+    <div class="tp-empty">
+      <div class="tp-empty-icon"><i class="bi bi-map"></i></div>
+      <h5>No itineraries yet</h5>
+      <p>Plan your first trip and it'll show up here. It only takes a minute!</p>
+      <a href="{{ url_for('main.index') }}#trip-form" class="btn btn-tp-primary">Plan a Trip</a>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

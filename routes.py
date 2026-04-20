@@ -1,3 +1,4 @@
+import functools
 import sqlite3
 
 from flask import (
@@ -15,6 +16,19 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from db import get_db
 
 main = Blueprint("main", __name__)
+
+
+def login_required(view):
+    """Redirect anonymous users to the login page, preserving the target URL."""
+
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            flash("Please log in to access this page.", "error")
+            return redirect(url_for("main.login", next=request.path))
+        return view(**kwargs)
+
+    return wrapped_view
 
 
 @main.before_app_request
@@ -99,7 +113,16 @@ def login():
         session.clear()
         session["user_id"] = user["id"]
         flash(f"Welcome back, {user['username']}!", "success")
-        return redirect(url_for("main.index"))
+
+        # Honor ?next=<path>, but only relative paths (guard against open redirects).
+        next_url = request.args.get("next", "")
+        if next_url.startswith("/") and not next_url.startswith("//"):
+            return redirect(next_url)
+
+        if user["role"] == "admin":
+            # M5 will flip this to url_for("main.admin_dashboard").
+            return redirect(url_for("main.index"))
+        return redirect(url_for("main.dashboard"))
 
     return render_template("login.html")
 
@@ -111,7 +134,12 @@ def logout():
     return redirect(url_for("main.index"))
 
 
+@main.route("/dashboard")
+@login_required
+def dashboard():
+    return render_template("dashboard.html")
+
+
 # Route stubs to add as features land:
-#   /dashboard                               (M4 — user's saved itineraries)
 #   /admin                                   (M5 — admin dashboard)
 #   /itinerary/new, /itinerary/<int:id>      (AI generation + detail page)
