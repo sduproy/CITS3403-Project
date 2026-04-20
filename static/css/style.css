@@ -250,4 +250,37 @@
         50% {transform: translateY(-10px)}
     }
 
-    
+    /*Features*/
+
+    .features {
+        padding: 6rem 3rem;
+        background: var(--ink);
+        color: var(--sand);
+    }
+
+    .features-header h2 {
+        font-size: clamp(2rem, 3.5vw, 3rem);
+    }
+
+    .features h2 em { color: var(--gold); font-style: italic; }
+
+    .features-header p { color: rgba(245,239,224, 0.55); max-width: 50ch; }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .feature-card {
+        background: rgba(245, 239, 224, 0.05);
+        border: 1px solid rgba(245, 239, 224, 0.08);
+        border-radius: 1.2rem;
+    }
+
+    .feature-card:hover {
+        background: rgba(245, 239, 224, 0.08);
+        transform: translateY(-4px);
+    }
