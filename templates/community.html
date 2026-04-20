@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Community Itineraries — SmartVoyage</title>
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"/>
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap"/>
+    <!-- Shared site CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+    <!-- Community page CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/community.css') }}"/>
+</head>
+<body>
+
+    <!-- ==================== NAVBAR ==================== -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">Smart<span>Voyage</span></a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('community') }}">Community</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Explore</a></li>
+                    <li class="nav-item"><a class="nav-link btn-nav ms-2" href="#">Sign In</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ==================== PAGE HEADER ==================== -->
+    <section class="community-header">
+        <div class="container text-center">
+            <p class="community-eyebrow">✈️ Shared by travellers, for travellers</p>
+            <h1>Community <em>Itineraries</em></h1>
+            <p class="community-subtitle">
+                Discover real trip plans from fellow explorers. Browse, rate, and get inspired for your next adventure.
+            </p>
+        </div>
+    </section>
+
+    <!-- ==================== FILTERS ==================== -->
+    <section class="community-filters-section" id="filters-bar">
+        <div class="container">
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <!-- Search -->
+                <div class="community-search-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="search" id="community-search-input"
+                           placeholder="Search by city, country, or keyword…">
+                </div>
+                <!-- Region chips -->
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="filter-chip active" data-filter="all">All</button>
+                    <button class="filter-chip" data-filter="asia">Asia</button>
+                    <button class="filter-chip" data-filter="europe">Europe</button>
+                    <button class="filter-chip" data-filter="americas">Americas</button>
+                    <button class="filter-chip" data-filter="africa">Africa</button>
+                </div>
+                <!-- Sort -->
+                <select class="community-sort ms-auto" id="community-sort" aria-label="Sort itineraries">
+                    <option value="popular">Most Popular</option>
+                    <option value="rating">Top Rated</option>
+                    <option value="newest">Newest First</option>
+                    <option value="shortest">Shortest Trip</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== CARDS ==================== -->
+    <section class="community-cards-section">
+        <div class="container">
+            <p class="results-count mb-3">
+                Showing <span id="visible-count">6</span> itineraries
+            </p>
+
+            <div class="row g-4" id="community-cards">
+
+                <!-- ── Card 1 ── -->
+                <div class="col-lg-4 col-md-6 card-col"
+                     data-region="asia" data-days="5" data-likes="284" data-rating="4.8" data-title="Tokyo in 5 Days: Temples Tech Street Food">
+                    <div class="community-card h-100">
+                        <div class="card-img-area" style="background: linear-gradient(135deg,#e8c99a,#c4855e);">
+                            <span class="region-badge">Asia</span>
+                            <div class="img-icon"><i class="bi bi-buildings"></i></div>
+                        </div>
+                        <div class="card-body-area">
+                            <div class="card-meta">
+                                <span><i class="bi bi-calendar3"></i> 5 days</span>
+                                <span><i class="bi bi-geo-alt"></i> Tokyo, Japan</span>
+                            </div>
+                            <h3 class="card-title-text">Tokyo in 5 Days: Temples, Tech &amp; Street Food</h3>
+                            <p class="card-desc">A whirlwind tour from Asakusa to Akihabara — shrines in the morning, neon at night. Every train timed.</p>
+                            <div class="card-tags">
+                                <span class="tag">Culture</span>
+                                <span class="tag">Food</span>
+                                <span class="tag">City</span>
+                            </div>
+                            <!-- Star rating -->
+                            <div class="card-rating">
+                                <span class="stars" aria-label="4.8 out of 5 stars">
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-half"></i>
+                                </span>
+                                <span class="rating-num">4.8</span>
+                                <span class="rating-reviews">(47 reviews)</span>
+                            </div>
+                            <div class="card-footer-row">
+                                <div class="author-row">
+                                    <div class="author-avatar">MK</div>
+                                    <span>Maya K.</span>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="act-btn like-btn" data-id="1" aria-label="Like">
+                                        <i class="bi bi-heart"></i><span class="lc">284</span>
+                                    </button>
+                                    <button class="act-btn print-btn" aria-label="Print itinerary" onclick="printItinerary(this)">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Card 2 ── -->
+                <div class="col-lg-4 col-md-6 card-col"
+                     data-region="europe" data-days="7" data-likes="197" data-rating="4.6" data-title="Island Hopping Athens Santorini Crete">
+                    <div class="community-card h-100">
+                        <div class="card-img-area" style="background: linear-gradient(135deg,#9ab5c4,#5e7e9b);">
+                            <span class="region-badge">Europe</span>
+                            <div class="img-icon"><i class="bi bi-water"></i></div>
+                        </div>
+                        <div class="card-body-area">
+                            <div class="card-meta">
+                                <span><i class="bi bi-calendar3"></i> 7 days</span>
+                                <span><i class="bi bi-geo-alt"></i> Greek Islands</span>
+                            </div>
+                            <h3 class="card-title-text">Island Hopping: Athens → Santorini → Crete</h3>
+                            <p class="card-desc">Three islands, one week, zero stress. Ferry schedules baked in and beaches ranked by crowd level.</p>
+                            <div class="card-tags">
+                                <span class="tag">Beach</span>
+                                <span class="tag">History</span>
+                                <span class="tag">Ferry</span>
+                            </div>
+                            <div class="card-rating">
+                                <span class="stars" aria-label="4.6 out of 5 stars">
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-half"></i>
+                                </span>
+                                <span class="rating-num">4.6</span>
+                                <span class="rating-reviews">(31 reviews)</span>
+                            </div>
+                            <div class="card-footer-row">
+                                <div class="author-row">
+                                    <div class="author-avatar">DP</div>
+                                    <span>David P.</span>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="act-btn like-btn" data-id="2" aria-label="Like">
+                                        <i class="bi bi-heart"></i><span class="lc">197</span>
+                                    </button>
+                                    <button class="act-btn print-btn" aria-label="Print itinerary" onclick="printItinerary(this)">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Card 3 ── -->
+                <div class="col-lg-4 col-md-6 card-col"
+                     data-region="europe" data-days="4" data-likes="312" data-rating="4.9" data-title="Paris Art Cuisine Curated Weekend">
+                    <div class="community-card h-100">
+                        <div class="card-img-area" style="background: linear-gradient(135deg,#c4a882,#8c6e4a);">
+                            <span class="region-badge">Europe</span>
+                            <div class="img-icon"><i class="bi bi-building"></i></div>
+                        </div>
+                        <div class="card-body-area">
+                            <div class="card-meta">
+                                <span><i class="bi bi-calendar3"></i> 4 days</span>
+                                <span><i class="bi bi-geo-alt"></i> Paris, France</span>
+                            </div>
+                            <h3 class="card-title-text">Paris Art &amp; Cuisine: A Curated Weekend</h3>
+                            <p class="card-desc">Louvre to Le Marais, patisseries to hidden galleries. Walking-first with Métro for longer hops.</p>
+                            <div class="card-tags">
+                                <span class="tag">Art</span>
+                                <span class="tag">Food</span>
+                                <span class="tag">Walking</span>
+                            </div>
+                            <div class="card-rating">
+                                <span class="stars" aria-label="4.9 out of 5 stars">
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                </span>
+                                <span class="rating-num">4.9</span>
+                                <span class="rating-reviews">(62 reviews)</span>
+                            </div>
+                            <div class="card-footer-row">
+                                <div class="author-row">
+                                    <div class="author-avatar">SA</div>
+                                    <span>Sarah A.</span>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="act-btn like-btn" data-id="3" aria-label="Like">
+                                        <i class="bi bi-heart"></i><span class="lc">312</span>
+                                    </button>
+                                    <button class="act-btn print-btn" aria-label="Print itinerary" onclick="printItinerary(this)">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Card 4 ── -->
+                <div class="col-lg-4 col-md-6 card-col"
+                     data-region="asia" data-days="10" data-likes="156" data-rating="4.5" data-title="Bali Slow Travel Ubud Temples Beaches">
+                    <div class="community-card h-100">
+                        <div class="card-img-area" style="background: linear-gradient(135deg,#7a9e7e,#4a7a5e);">
+                            <span class="region-badge">Asia</span>
+                            <div class="img-icon"><i class="bi bi-tree"></i></div>
+                        </div>
+                        <div class="card-body-area">
+                            <div class="card-meta">
+                                <span><i class="bi bi-calendar3"></i> 10 days</span>
+                                <span><i class="bi bi-geo-alt"></i> Bali, Indonesia</span>
+                            </div>
+                            <h3 class="card-title-text">Bali Slow Travel: Ubud, Temples &amp; Beaches</h3>
+                            <p class="card-desc">A relaxed pace through rice terraces, water temples, and black-sand beaches. Scooter-friendly routes.</p>
+                            <div class="card-tags">
+                                <span class="tag">Nature</span>
+                                <span class="tag">Wellness</span>
+                                <span class="tag">Budget</span>
+                            </div>
+                            <div class="card-rating">
+                                <span class="stars" aria-label="4.5 out of 5 stars">
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-half"></i>
+                                </span>
+                                <span class="rating-num">4.5</span>
+                                <span class="rating-reviews">(28 reviews)</span>
+                            </div>
+                            <div class="card-footer-row">
+                                <div class="author-row">
+                                    <div class="author-avatar">LW</div>
+                                    <span>Liam W.</span>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="act-btn like-btn" data-id="4" aria-label="Like">
+                                        <i class="bi bi-heart"></i><span class="lc">156</span>
+                                    </button>
+                                    <button class="act-btn print-btn" aria-label="Print itinerary" onclick="printItinerary(this)">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Card 5 ── -->
+                <div class="col-lg-4 col-md-6 card-col"
+                     data-region="africa" data-days="6" data-likes="221" data-rating="4.7" data-title="Marrakech Sahara Desert Medinas Morocco">
+                    <div class="community-card h-100">
+                        <div class="card-img-area" style="background: linear-gradient(135deg,#c8a96e,#9a7a3e);">
+                            <span class="region-badge">Africa</span>
+                            <div class="img-icon"><i class="bi bi-sunrise"></i></div>
+                        </div>
+                        <div class="card-body-area">
+                            <div class="card-meta">
+                                <span><i class="bi bi-calendar3"></i> 6 days</span>
+                                <span><i class="bi bi-geo-alt"></i> Morocco</span>
+                            </div>
+                            <h3 class="card-title-text">Marrakech to the Sahara: Desert &amp; Medinas</h3>
+                            <p class="card-desc">Souks, riads, Atlas Mountains, and a night under the stars. Includes private transfer timings.</p>
+                            <div class="card-tags">
+                                <span class="tag">Adventure</span>
+                                <span class="tag">Culture</span>
+                                <span class="tag">Desert</span>
+                            </div>
+                            <div class="card-rating">
+                                <span class="stars" aria-label="4.7 out of 5 stars">
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-half"></i>
+                                </span>
+                                <span class="rating-num">4.7</span>
+                                <span class="rating-reviews">(39 reviews)</span>
+                            </div>
+                            <div class="card-footer-row">
+                                <div class="author-row">
+                                    <div class="author-avatar">NR</div>
+                                    <span>Nadia R.</span>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="act-btn like-btn" data-id="5" aria-label="Like">
+                                        <i class="bi bi-heart"></i><span class="lc">221</span>
+                                    </button>
+                                    <button class="act-btn print-btn" aria-label="Print itinerary" onclick="printItinerary(this)">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Card 6 ── -->
+                <div class="col-lg-4 col-md-6 card-col"
+                     data-region="americas" data-days="14" data-likes="408" data-rating="4.9" data-title="Patagonia End World Trek Argentina Chile">
+                    <div class="community-card h-100">
+                        <div class="card-img-area" style="background: linear-gradient(135deg,#a3b899,#5e7e5e);">
+                            <span class="region-badge">Americas</span>
+                            <div class="img-icon"><i class="bi bi-map"></i></div>
+                        </div>
+                        <div class="card-body-area">
+                            <div class="card-meta">
+                                <span><i class="bi bi-calendar3"></i> 14 days</span>
+                                <span><i class="bi bi-geo-alt"></i> Patagonia</span>
+                            </div>
+                            <h3 class="card-title-text">Patagonia: End-of-the-World Trek</h3>
+                            <p class="card-desc">Argentina to Chile — glaciers, peaks, and pampas. The ultimate two-week outdoor adventure.</p>
+                            <div class="card-tags">
+                                <span class="tag">Adventure</span>
+                                <span class="tag">Nature</span>
+                                <span class="tag">Hiking</span>
+                            </div>
+                            <div class="card-rating">
+                                <span class="stars" aria-label="4.9 out of 5 stars">
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                </span>
+                                <span class="rating-num">4.9</span>
+                                <span class="rating-reviews">(55 reviews)</span>
+                            </div>
+                            <div class="card-footer-row">
+                                <div class="author-row">
+                                    <div class="author-avatar">JC</div>
+                                    <span>James C.</span>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="act-btn like-btn" data-id="6" aria-label="Like">
+                                        <i class="bi bi-heart"></i><span class="lc">408</span>
+                                    </button>
+                                    <button class="act-btn print-btn" aria-label="Print itinerary" onclick="printItinerary(this)">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /row -->
+
+            <!-- No results -->
+            <div id="no-results" class="no-results d-none">
+                <i class="bi bi-compass"></i>
+                <p>No itineraries found. Try a different search or region.</p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ==================== PRINT AREA (screen-hidden, print-visible) ==================== -->
+    <div id="print-area" class="print-area">
+        <div class="print-header">
+            <h1>Smart<em>Voyage</em></h1>
+            <p>Community Itinerary</p>
+        </div>
+        <div id="print-content"></div>
+        <div class="print-footer">
+            <p>Printed from SmartVoyage &mdash; smartvoyage.com</p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    // ── Search & Filter ──────────────────────────────────────────────
+    const searchInput  = document.getElementById('community-search-input');
+    const sortSelect   = document.getElementById('community-sort');
+    const filterChips  = document.querySelectorAll('.filter-chip');
+    const cardCols     = document.querySelectorAll('.card-col');
+    const noResults    = document.getElementById('no-results');
+    const visibleCount = document.getElementById('visible-count');
+
+    let activeFilter = 'all';
+
+    function applyFilters() {
+        const query = searchInput.value.toLowerCase().trim();
+        let count = 0;
+        cardCols.forEach(function(col) {
+            const regionMatch  = activeFilter === 'all' || col.dataset.region === activeFilter;
+            const searchText   = (col.dataset.title + ' ' + col.dataset.region).toLowerCase();
+            const searchMatch  = !query || searchText.includes(query);
+            const show = regionMatch && searchMatch;
+            col.style.display = show ? '' : 'none';
+            if (show) count++;
+        });
+        visibleCount.textContent = count;
+        noResults.classList.toggle('d-none', count > 0);
+    }
+
+    filterChips.forEach(function(chip) {
+        chip.addEventListener('click', function() {
+            filterChips.forEach(function(c) { c.classList.remove('active'); });
+            chip.classList.add('active');
+            activeFilter = chip.dataset.filter;
+            applyFilters();
+        });
+    });
+
+    searchInput.addEventListener('input', applyFilters);
+
+    // ── Sort ──────────────────────────────────────────────────────────
+    sortSelect.addEventListener('change', function() {
+        const container = document.getElementById('community-cards');
+        const cols = Array.from(container.querySelectorAll('.card-col'));
+        const val  = sortSelect.value;
+
+        cols.sort(function(a, b) {
+            if (val === 'popular')  return Number(b.dataset.likes)  - Number(a.dataset.likes);
+            if (val === 'rating')   return Number(b.dataset.rating) - Number(a.dataset.rating);
+            if (val === 'shortest') return Number(a.dataset.days)   - Number(b.dataset.days);
+            return 0;
+        });
+        cols.forEach(function(col) { container.appendChild(col); });
+    });
+
+    // ── Like Button ───────────────────────────────────────────────────
+    document.querySelectorAll('.like-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const liked = btn.classList.toggle('liked');
+            btn.querySelector('i').className = liked ? 'bi bi-heart-fill' : 'bi bi-heart';
+            var countEl = btn.querySelector('.lc');
+            countEl.textContent = Number(countEl.textContent) + (liked ? 1 : -1);
+        });
+    });
+
+    // ── Print Itinerary ───────────────────────────────────────────────
+    function printItinerary(btn) {
+        var card    = btn.closest('.community-card');
+        var title   = card.querySelector('.card-title-text').textContent;
+        var metas   = Array.from(card.querySelectorAll('.card-meta span'))
+                          .map(function(s) { return s.textContent.trim(); }).join('  ·  ');
+        var desc    = card.querySelector('.card-desc').textContent;
+        var tags    = Array.from(card.querySelectorAll('.tag'))
+                          .map(function(t) { return t.textContent; }).join(', ');
+        var rating  = card.querySelector('.rating-num').textContent;
+        var reviews = card.querySelector('.rating-reviews').textContent;
+        var author  = card.querySelector('.author-row span').textContent;
+
+        document.getElementById('print-content').innerHTML =
+            '<h2>' + title + '</h2>' +
+            '<p class="print-meta">' + metas + '</p>' +
+            '<p>' + desc + '</p>' +
+            '<p><strong>Tags:</strong> ' + tags + '</p>' +
+            '<p><strong>Rating:</strong> ' + rating + '/5 &nbsp;' + reviews + '</p>' +
+            '<p><strong>Shared by:</strong> ' + author + '</p>';
+
+        window.print();
+    }
+    </script>
+
+</body>
+</html>
