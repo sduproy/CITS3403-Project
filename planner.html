@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Plan your perfect trip with AgileTravel. Add destinations, set constraints, pick transport, and get an optimised itinerary.">
+  <title>Trip Planner — AgileTravel</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ==================== NAVBAR ==================== -->
+  <nav class="navbar navbar-expand-lg site-navbar" id="main-nav">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">
+        <i class="bi bi-compass"></i> AgileTravel
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ms-auto me-3">
+          <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+          <li class="nav-item"><a class="nav-link active" href="planner.html">Planner</a></li>
+          <li class="nav-item"><a class="nav-link" href="board.html">Itineraries</a></li>
+        </ul>
+        <a href="login.html" class="btn btn-cta" id="nav-login-btn">
+          <i class="bi bi-person"></i> Sign In
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==================== PLANNER HEADER ==================== -->
+  <section class="planner-header" id="planner-hero">
+    <div class="container">
+      <h1><i class="bi bi-map"></i> Trip Planner</h1>
+      <p>Add your destinations, set your constraints, and let us build the perfect schedule.</p>
+
+      <!-- Progress Steps -->
+      <div class="progress-steps" id="planner-progress">
+        <div class="progress-step completed">
+          <div class="step-dot">1</div>
+          <span class="step-label">Destinations</span>
+        </div>
+        <div class="progress-step active">
+          <div class="step-dot">2</div>
+          <span class="step-label">Transport</span>
+        </div>
+        <div class="progress-step">
+          <div class="step-dot">3</div>
+          <span class="step-label">AI Picks</span>
+        </div>
+        <div class="progress-step">
+          <div class="step-dot">4</div>
+          <span class="step-label">Itinerary</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== PLANNER BODY ==================== -->
+  <section class="section" id="planner-body">
+    <div class="container" style="max-width:900px;">
+
+      <!-- ===== PANEL 1 — TRIP DETAILS ===== -->
+      <div class="planner-panel" id="panel-trip-details">
+        <h2 class="panel-title"><i class="bi bi-suitcase-lg"></i> Trip Details</h2>
+        <p class="panel-subtitle">Set the basics — where you're based and when your trip starts.</p>
+
+        <form id="trip-details-form">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="trip-city" class="form-label">Starting City</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                <input type="text" class="form-control" id="trip-city" name="start_city"
+                       placeholder="e.g. London" required>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label for="trip-start-date" class="form-label">Start Date</label>
+              <input type="date" class="form-control" id="trip-start-date" name="start_date" required>
+            </div>
+            <div class="col-md-3">
+              <label for="trip-end-date" class="form-label">End Date</label>
+              <input type="date" class="form-control" id="trip-end-date" name="end_date" required>
+            </div>
+            <div class="col-md-6">
+              <label for="trip-budget" class="form-label">Daily Budget (optional)</label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" class="form-control" id="trip-budget" name="daily_budget"
+                       min="0" step="10" placeholder="e.g. 150">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label for="trip-pace" class="form-label">Preferred Pace</label>
+              <select class="form-select" id="trip-pace" name="pace">
+                <option value="relaxed">Relaxed — fewer stops, more downtime</option>
+                <option value="balanced" selected>Balanced — a good mix</option>
+                <option value="packed">Packed — see everything possible</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- ===== PANEL 2 — DESTINATIONS ===== -->
+      <div class="planner-panel" id="panel-destinations">
+        <h2 class="panel-title"><i class="bi bi-pin-map"></i> Your Destinations</h2>
+        <p class="panel-subtitle">Add every place you want to visit. Set time windows for places with specific opening hours or event times.</p>
+
+        <!-- Destination 1 -->
+        <div class="dest-item" id="dest-1">
+          <div class="dest-item-number">1</div>
+          <div class="dest-item-fields">
+            <div class="mb-2">
+              <label for="dest-1-name" class="form-label">Place Name</label>
+              <input type="text" class="form-control" id="dest-1-name" placeholder="e.g. British Museum"
+                     value="British Museum">
+            </div>
+            <div class="dest-item-time">
+              <div style="flex:1;min-width:140px;">
+                <label for="dest-1-date" class="form-label">Date (optional)</label>
+                <input type="date" class="form-control" id="dest-1-date">
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <label for="dest-1-open" class="form-label">Opens At</label>
+                <input type="time" class="form-control" id="dest-1-open" value="10:00">
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <label for="dest-1-close" class="form-label">Closes At</label>
+                <input type="time" class="form-control" id="dest-1-close" value="17:00">
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <label for="dest-1-duration" class="form-label">Time Needed</label>
+                <select class="form-select" id="dest-1-duration">
+                  <option value="30">30 min</option>
+                  <option value="60">1 hour</option>
+                  <option value="90">1.5 hours</option>
+                  <option value="120" selected>2 hours</option>
+                  <option value="180">3 hours</option>
+                  <option value="240">4+ hours</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Destination 2 -->
+        <div class="dest-item" id="dest-2">
+          <div class="dest-item-number">2</div>
+          <div class="dest-item-fields">
+            <div class="mb-2">
+              <label for="dest-2-name" class="form-label">Place Name</label>
+              <input type="text" class="form-control" id="dest-2-name" placeholder="e.g. Tower of London"
+                     value="Tower of London">
+            </div>
+            <div class="dest-item-time">
+              <div style="flex:1;min-width:140px;">
+                <label for="dest-2-date" class="form-label">Date (optional)</label>
+                <input type="date" class="form-control" id="dest-2-date">
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <label for="dest-2-open" class="form-label">Opens At</label>
+                <input type="time" class="form-control" id="dest-2-open" value="09:00">
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <label for="dest-2-close" class="form-label">Closes At</label>
+                <input type="time" class="form-control" id="dest-2-close" value="17:30">
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <label for="dest-2-duration" class="form-label">Time Needed</label>
+                <select class="form-select" id="dest-2-duration">
+                  <option value="30">30 min</option>
+                  <option value="60">1 hour</option>
+                  <option value="90" selected>1.5 hours</option>
+                  <option value="120">2 hours</option>
+                  <option value="180">3 hours</option>
+                  <option value="240">4+ hours</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Destination 3 -->
+        <div class="dest-item" id="dest-3">
+          <div class="dest-item-number">3</div>
+          <div class="dest-item-fields">
+            <div class="mb-2">
+              <label for="dest-3-name" class="form-label">Place Name</label>
+              <input type="text" class="form-control" id="dest-3-name" placeholder="e.g. Evening Concert"
+                     value="O2 Arena — Concert">
+            </div>
+            <div class="dest-item-time">
+              <div style="flex:1;min-width:140px;">
+                <label for="dest-3-date" class="form-label">Date (required)</label>
+                <input type="date" class="form-control" id="dest-3-date" value="2026-04-05">
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <label for="dest-3-open" class="form-label">Starts At</label>
+                <input type="time" class="form-control" id="dest-3-open" value="19:00">
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <label for="dest-3-close" class="form-label">Ends At</label>
+                <input type="time" class="form-control" id="dest-3-close" value="22:30">
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <label for="dest-3-duration" class="form-label">Time Needed</label>
+                <select class="form-select" id="dest-3-duration">
+                  <option value="30">30 min</option>
+                  <option value="60">1 hour</option>
+                  <option value="90">1.5 hours</option>
+                  <option value="120">2 hours</option>
+                  <option value="180" selected>3 hours</option>
+                  <option value="240">4+ hours</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Destination button -->
+        <button type="button" class="btn btn-outline-primary w-100 mt-2" id="add-dest-btn">
+          <i class="bi bi-plus-lg"></i> Add Another Destination
+        </button>
+      </div>
+
+      <!-- ===== PANEL 3 — TRANSPORT PREFERENCES ===== -->
+      <div class="planner-panel" id="panel-transport">
+        <h2 class="panel-title"><i class="bi bi-signpost-split"></i> Transport Preferences</h2>
+        <p class="panel-subtitle">Select the transport modes you're willing to use. We'll find optimal routes using your selections.</p>
+
+        <div class="transport-grid">
+          <label class="transport-option" for="t-walking">
+            <input class="form-check-input" type="checkbox" id="t-walking" name="transport" value="walking" checked>
+            <i class="bi bi-person-walking"></i>
+            <span>Walking</span>
+          </label>
+          <label class="transport-option" for="t-bus">
+            <input class="form-check-input" type="checkbox" id="t-bus" name="transport" value="bus" checked>
+            <i class="bi bi-bus-front"></i>
+            <span>Bus</span>
+          </label>
+          <label class="transport-option" for="t-train">
+            <input class="form-check-input" type="checkbox" id="t-train" name="transport" value="train" checked>
+            <i class="bi bi-train-front"></i>
+            <span>Train / Metro</span>
+          </label>
+          <label class="transport-option" for="t-car">
+            <input class="form-check-input" type="checkbox" id="t-car" name="transport" value="car">
+            <i class="bi bi-car-front"></i>
+            <span>Car / Taxi</span>
+          </label>
+          <label class="transport-option" for="t-bike">
+            <input class="form-check-input" type="checkbox" id="t-bike" name="transport" value="bike">
+            <i class="bi bi-bicycle"></i>
+            <span>Bicycle</span>
+          </label>
+          <label class="transport-option" for="t-rideshare">
+            <input class="form-check-input" type="checkbox" id="t-rideshare" name="transport" value="rideshare">
+            <i class="bi bi-phone"></i>
+            <span>Rideshare</span>
+          </label>
+        </div>
+
+        <div class="mt-4">
+          <label for="transport-priority" class="form-label">Optimise For</label>
+          <div class="d-flex flex-wrap gap-3">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="optimise" id="opt-time" value="time" checked>
+              <label class="form-check-label" for="opt-time">Fastest route</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="optimise" id="opt-cost" value="cost">
+              <label class="form-check-label" for="opt-cost">Lowest cost</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="optimise" id="opt-walk" value="walking">
+              <label class="form-check-label" for="opt-walk">Most walking</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <label for="max-walk" class="form-label">Maximum Walking Distance Per Leg</label>
+          <input type="range" class="form-range" id="max-walk" name="max_walk_km"
+                 min="0.5" max="5" step="0.5" value="2">
+          <div class="d-flex justify-content-between" style="font-size:var(--fs-xs);color:var(--text-light);">
+            <span>0.5 km</span>
+            <span>2 km (selected)</span>
+            <span>5 km</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PANEL 4 — AI RECOMMENDATIONS ===== -->
+      <div class="planner-panel" id="panel-ai">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+          <h2 class="panel-title mb-0"><i class="bi bi-stars"></i> AI Recommendations</h2>
+          <div class="ai-badge"><i class="bi bi-cpu"></i> Powered by Gemini &amp; Claude</div>
+        </div>
+        <p class="panel-subtitle">Based on your destinations, we suggest these nearby places you might enjoy.</p>
+
+        <div class="row g-3">
+          <!-- AI Card 1 -->
+          <div class="col-lg-4 col-md-6">
+            <div class="ai-card" id="ai-rec-1">
+              <img src="images/japan.png" class="ai-card-img" alt="Recommended destination">
+              <div class="ai-card-body">
+                <h4 class="ai-card-title">Sir John Soane's Museum</h4>
+                <p class="ai-card-text">
+                  Quirky architect's home stuffed with antiquities. 12-min walk from your British Museum stop.
+                </p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="badge bg-secondary">Free Entry</span>
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="ai-add-1">
+                    <i class="bi bi-plus"></i> Add
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- AI Card 2 -->
+          <div class="col-lg-4 col-md-6">
+            <div class="ai-card" id="ai-rec-2">
+              <img src="images/greece.png" class="ai-card-img" alt="Recommended destination">
+              <div class="ai-card-body">
+                <h4 class="ai-card-title">Leadenhall Market</h4>
+                <p class="ai-card-text">
+                  Stunning Victorian covered market near Tower of London. Great for lunch between sights.
+                </p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="badge bg-secondary">Food</span>
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="ai-add-2">
+                    <i class="bi bi-plus"></i> Add
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- AI Card 3 -->
+          <div class="col-lg-4 col-md-6">
+            <div class="ai-card" id="ai-rec-3">
+              <img src="images/paris.png" class="ai-card-img" alt="Recommended destination">
+              <div class="ai-card-body">
+                <h4 class="ai-card-title">Sky Garden</h4>
+                <p class="ai-card-text">
+                  Free rooftop garden with panoramic views. Book a sunset slot before your O2 concert.
+                </p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="badge bg-secondary">Views</span>
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="ai-add-3">
+                    <i class="bi bi-plus"></i> Add
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-sm btn-outline-primary mt-3" id="ai-refresh-btn">
+          <i class="bi bi-arrow-repeat"></i> Get More Suggestions
+        </button>
+      </div>
+
+      <!-- ===== PANEL 5 — GENERATED ITINERARY ===== -->
+      <div class="planner-panel" id="panel-itinerary">
+        <h2 class="panel-title"><i class="bi bi-calendar2-week"></i> Your Optimised Itinerary</h2>
+        <p class="panel-subtitle">Here's the most efficient order, with transport and timings worked out.</p>
+
+        <!-- Day label -->
+        <h3 style="font-size:var(--fs-md);font-weight:700;margin-bottom:var(--space-lg);">
+          <i class="bi bi-calendar-event text-teal"></i> Day 1 — Saturday, 4 April 2026
+        </h3>
+
+        <div class="timeline">
+          <!-- Timeline Item 1 -->
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-time">09:30 — 10:00</div>
+            <div class="timeline-place">Travel to British Museum</div>
+            <div class="timeline-transport">
+              <i class="bi bi-train-front"></i> Central Line → Holborn (18 min)
+            </div>
+          </div>
+
+          <!-- Timeline Item 2 -->
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-time">10:00 — 12:00</div>
+            <div class="timeline-place">British Museum</div>
+            <p style="font-size:var(--fs-sm);color:var(--text-secondary);margin:0;">
+              Explore the Egyptian galleries and Rosetta Stone. Opens at 10:00.
+            </p>
+          </div>
+
+          <!-- Timeline Item 3 -->
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-time">12:00 — 12:15</div>
+            <div class="timeline-place">Walk to Sir John Soane's Museum</div>
+            <div class="timeline-transport">
+              <i class="bi bi-person-walking"></i> 12-min walk via Lincoln's Inn Fields
+            </div>
+          </div>
+
+          <!-- Timeline Item 4 -->
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-time">12:15 — 13:00</div>
+            <div class="timeline-place">Sir John Soane's Museum</div>
+            <p style="font-size:var(--fs-sm);color:var(--text-secondary);margin:0;">
+              AI-recommended. Free entry, quirky architecture collection.
+            </p>
+            <div class="ai-badge mt-1"><i class="bi bi-stars"></i> AI Pick</div>
+          </div>
+
+          <!-- Timeline Item 5 -->
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-time">13:15 — 14:00</div>
+            <div class="timeline-place">Leadenhall Market — Lunch</div>
+            <div class="timeline-transport">
+              <i class="bi bi-train-front"></i> Central Line → Bank (12 min)
+            </div>
+            <div class="ai-badge mt-1"><i class="bi bi-stars"></i> AI Pick</div>
+          </div>
+
+          <!-- Timeline Item 6 -->
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-time">14:15 — 15:45</div>
+            <div class="timeline-place">Tower of London</div>
+            <div class="timeline-transport">
+              <i class="bi bi-person-walking"></i> 8-min walk
+            </div>
+            <p style="font-size:var(--fs-sm);color:var(--text-secondary);margin:0;">
+              Crown Jewels and White Tower. Closes at 17:30.
+            </p>
+          </div>
+
+          <!-- Timeline Item 7 -->
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-time">16:00 — 17:00</div>
+            <div class="timeline-place">Sky Garden — Sunset</div>
+            <div class="timeline-transport">
+              <i class="bi bi-person-walking"></i> 15-min walk via Tower Bridge
+            </div>
+            <div class="ai-badge mt-1"><i class="bi bi-stars"></i> AI Pick</div>
+          </div>
+        </div>
+
+        <h3 style="font-size:var(--fs-md);font-weight:700;margin:var(--space-xl) 0 var(--space-lg);">
+          <i class="bi bi-calendar-event text-teal"></i> Day 2 — Sunday, 5 April 2026
+        </h3>
+
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-time">17:30 — 18:15</div>
+            <div class="timeline-place">Travel to O2 Arena</div>
+            <div class="timeline-transport">
+              <i class="bi bi-train-front"></i> Jubilee Line → North Greenwich (25 min)
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-time">19:00 — 22:30</div>
+            <div class="timeline-place">O2 Arena — Concert</div>
+            <p style="font-size:var(--fs-sm);color:var(--text-secondary);margin:0;">
+              Fixed event. Doors open 18:00, show starts 19:00.
+            </p>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="d-flex flex-wrap gap-3 mt-4 pt-3" style="border-top:1px solid var(--border-light);">
+          <button type="button" class="btn btn-primary btn-lg" id="save-itinerary-btn">
+            <i class="bi bi-download"></i> Save Itinerary
+          </button>
+          <button type="button" class="btn btn-secondary" id="share-itinerary-btn">
+            <i class="bi bi-share"></i> Share to Board
+          </button>
+          <button type="button" class="btn btn-outline-primary" id="export-pdf-btn">
+            <i class="bi bi-file-earmark-pdf"></i> Export PDF
+          </button>
+          <button type="button" class="btn btn-outline-primary" id="print-itinerary-btn">
+            <i class="bi bi-printer"></i> Print
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="site-footer" id="footer">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-lg-4 col-md-6">
+          <div class="footer-brand"><i class="bi bi-compass"></i> AgileTravel</div>
+          <p class="footer-desc">
+            Smart itinerary planning powered by AI and real-time transit data. Travel without the guesswork.
+          </p>
+          <div class="footer-social mt-3">
+            <a href="#" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
+            <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+            <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+            <a href="#" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-6 col-6">
+          <h4 class="footer-heading">Product</h4>
+          <ul class="footer-links">
+            <li><a href="planner.html">Planner</a></li>
+            <li><a href="board.html">Itineraries</a></li>
+            <li><a href="#">Pricing</a></li>
+            <li><a href="#">API</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-2 col-md-6 col-6">
+          <h4 class="footer-heading">Company</h4>
+          <ul class="footer-links">
+            <li><a href="#">About</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Press</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-2 col-md-6 col-6">
+          <h4 class="footer-heading">Support</h4>
+          <ul class="footer-links">
+            <li><a href="#">Help Centre</a></li>
+            <li><a href="#">Contact</a></li>
+            <li><a href="#">Privacy</a></li>
+            <li><a href="#">Terms</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-2 col-md-6 col-6">
+          <h4 class="footer-heading">Explore</h4>
+          <ul class="footer-links">
+            <li><a href="#">Destinations</a></li>
+            <li><a href="#">Guides</a></li>
+            <li><a href="#">Community</a></li>
+            <li><a href="#">Partners</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 AgileTravel. All rights reserved.</span>
+        <span>Made with <i class="bi bi-heart-fill text-accent"></i> for travellers.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

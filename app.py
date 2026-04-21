@@ -1,3 +1,12 @@
+from flask import Flask
+
+from routes import main
+
+app = Flask(__name__)
+app.config["SECRET_KEY"] = "dev-change-me-before-deploy"
+app.register_blueprint(main)
+
+
 from pathlib import Path
 
 from flask import Flask

@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block title %}Community Itineraries · SmartVoyage{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/community.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- ==================== COMMUNITY HEADER ==================== -->
+<section class="comm-header">
+  <div class="container text-center">
+    <p class="comm-eyebrow">
+      <i class="bi bi-globe2 me-1"></i>Shared by Travellers
+    </p>
+    <h1 class="tp-font-display">Community <em>Itineraries</em></h1>
+    <p class="comm-subtitle">
+      Browse real trips crafted by SmartVoyage members. Get inspired, like your favourites, and print any itinerary for your journey.
+    </p>
+    <!-- Trending destination chips -->
+    <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+      <span class="tp-trending-chip" onclick="filterByTag('Japan')"><i class="bi bi-geo-alt me-1"></i>Japan</span>
+      <span class="tp-trending-chip" onclick="filterByTag('Italy')"><i class="bi bi-geo-alt me-1"></i>Italy</span>
+      <span class="tp-trending-chip" onclick="filterByTag('Iceland')"><i class="bi bi-geo-alt me-1"></i>Iceland</span>
+      <span class="tp-trending-chip" onclick="filterByTag('Morocco')"><i class="bi bi-geo-alt me-1"></i>Morocco</span>
+      <span class="tp-trending-chip" onclick="filterByTag('Thailand')"><i class="bi bi-geo-alt me-1"></i>Thailand</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FILTER BAR ==================== -->
+<div class="comm-filters-bar tp-bg-white border-bottom">
+  <div class="container">
+    <div class="row align-items-center g-2 py-3">
+      <!-- Search -->
+      <div class="col-12 col-md-5">
+        <div class="comm-search-wrap position-relative">
+          <i class="bi bi-search comm-search-icon"></i>
+          <input
+            id="comm-search"
+            type="text"
+            class="form-control tp-input ps-5"
+            placeholder="Search by destination, tags..."
+            oninput="applyFilters()"
+            aria-label="Search itineraries"
+          >
+        </div>
+      </div>
+      <!-- Duration filter -->
+      <div class="col-6 col-md-3">
+        <select id="comm-duration" class="form-select tp-select" onchange="applyFilters()" aria-label="Filter by duration">
+          <option value="">All durations</option>
+          <option value="short">1-4 days</option>
+          <option value="week">5-8 days</option>
+          <option value="long">9+ days</option>
+        </select>
+      </div>
+      <!-- Sort -->
+      <div class="col-6 col-md-3">
+        <select id="comm-sort" class="form-select tp-select" onchange="applyFilters()" aria-label="Sort itineraries">
+          <option value="likes">Most liked</option>
+          <option value="newest">Newest</option>
+          <option value="rating">Top rated</option>
+        </select>
+      </div>
+      <!-- Print button -->
+      <div class="col-12 col-md-1 text-md-end">
+        <button class="btn btn-tp-secondary w-100" onclick="printItinerary()" title="Print all visible itineraries">
+          <i class="bi bi-printer"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ITINERARY GRID ==================== -->
+<section class="tp-section">
+  <div class="container">
+
+    <div class="d-flex justify-content-between align-items-baseline mb-4">
+      <div>
+        <h2 class="tp-section-title mb-0">Community Trips</h2>
+        <p class="tp-text-muted small mb-0" id="result-count">Showing 6 itineraries</p>
+      </div>
+    </div>
+
+    <!-- Cards grid -->
+    <div class="row g-4" id="cards-grid">
+
+      <!-- Card 1 -->
+      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
+           data-tags="japan tokyo culture" data-duration="week" data-likes="84" data-rating="5" data-date="2026-04-10">
+        <div class="tp-card comm-card h-100">
+          <div class="comm-card-img" style="background-image: url('https://images.unsplash.com/photo-1492571350019-22de08371fd3?w=600&q=80')">
+            <span class="comm-region-badge">Asia</span>
+            <button class="like-btn" data-liked="false" onclick="toggleLike(this)" aria-label="Like">
+              <i class="bi bi-heart"></i>
+              <span>84</span>
+            </button>
+          </div>
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="tp-avatar">A</span>
+              <div>
+                <div class="fw-semibold" style="font-size:0.88rem;">Alex M.</div>
+                <div class="tp-text-muted" style="font-size:0.78rem;">April 2026</div>
+              </div>
+            </div>
+            <h5 class="card-title">7 Days in Japan: Tokyo to Kyoto</h5>
+            <p class="card-text flex-grow-1">Explore Shibuya, Arashiyama bamboo grove, and Fushimi Inari — a perfect blend of neon city life and ancient temples.</p>
+            <div class="comm-tags mb-2">
+              <span class="comm-chip">Japan</span>
+              <span class="comm-chip">Culture</span>
+              <span class="comm-chip">7 days</span>
+            </div>
+            <div class="comm-card-footer d-flex justify-content-between align-items-center">
+              <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
+           data-tags="italy rome amalfi food" data-duration="week" data-likes="61" data-rating="4" data-date="2026-04-08">
+        <div class="tp-card comm-card h-100">
+          <div class="comm-card-img" style="background-image: url('https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=600&q=80')">
+            <span class="comm-region-badge">Europe</span>
+            <button class="like-btn" data-liked="false" onclick="toggleLike(this)" aria-label="Like">
+              <i class="bi bi-heart"></i>
+              <span>61</span>
+            </button>
+          </div>
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="tp-avatar coral">S</span>
+              <div>
+                <div class="fw-semibold" style="font-size:0.88rem;">Sofia R.</div>
+                <div class="tp-text-muted" style="font-size:0.78rem;">April 2026</div>
+              </div>
+            </div>
+            <h5 class="card-title">Rome &amp; Amalfi Coast: 8 Days</h5>
+            <p class="card-text flex-grow-1">Ancient ruins by day, pasta e vino by night. End with cliff-side Positano views you'll never forget.</p>
+            <div class="comm-tags mb-2">
+              <span class="comm-chip">Italy</span>
+              <span class="comm-chip">Food</span>
+              <span class="comm-chip">8 days</span>
+            </div>
+            <div class="comm-card-footer d-flex justify-content-between align-items-center">
+              <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;<span class="empty">&#9733;</span></div>
+              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
+           data-tags="iceland northern lights nature" data-duration="short" data-likes="112" data-rating="5" data-date="2026-04-15">
+        <div class="tp-card comm-card h-100">
+          <div class="comm-card-img" style="background-image: url('https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600&q=80')">
+            <span class="comm-region-badge">Europe</span>
+            <button class="like-btn" data-liked="false" onclick="toggleLike(this)" aria-label="Like">
+              <i class="bi bi-heart"></i>
+              <span>112</span>
+            </button>
+          </div>
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="tp-avatar gold">L</span>
+              <div>
+                <div class="fw-semibold" style="font-size:0.88rem;">Lena K.</div>
+                <div class="tp-text-muted" style="font-size:0.78rem;">April 2026</div>
+              </div>
+            </div>
+            <h5 class="card-title">Iceland: 4-Day Northern Lights Chase</h5>
+            <p class="card-text flex-grow-1">Hot springs, glaciers, and the aurora borealis. A short but unforgettable escape into Iceland's raw wilderness.</p>
+            <div class="comm-tags mb-2">
+              <span class="comm-chip">Iceland</span>
+              <span class="comm-chip">Nature</span>
+              <span class="comm-chip">4 days</span>
+            </div>
+            <div class="comm-card-footer d-flex justify-content-between align-items-center">
+              <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
+           data-tags="morocco marrakech desert culture" data-duration="short" data-likes="45" data-rating="4" data-date="2026-03-28">
+        <div class="tp-card comm-card h-100">
+          <div class="comm-card-img" style="background-image: url('https://images.unsplash.com/photo-1539020140153-e479b8c22e70?w=600&q=80')">
+            <span class="comm-region-badge">Africa</span>
+            <button class="like-btn" data-liked="false" onclick="toggleLike(this)" aria-label="Like">
+              <i class="bi bi-heart"></i>
+              <span>45</span>
+            </button>
+          </div>
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="tp-avatar slate">O</span>
+              <div>
+                <div class="fw-semibold" style="font-size:0.88rem;">Omar H.</div>
+                <div class="tp-text-muted" style="font-size:0.78rem;">March 2026</div>
+              </div>
+            </div>
+            <h5 class="card-title">Marrakech &amp; Sahara: 4 Days</h5>
+            <p class="card-text flex-grow-1">Lose yourself in the medina souks, sleep under Sahara stars, and wake to mint tea and tagine.</p>
+            <div class="comm-tags mb-2">
+              <span class="comm-chip">Morocco</span>
+              <span class="comm-chip">Desert</span>
+              <span class="comm-chip">4 days</span>
+            </div>
+            <div class="comm-card-footer d-flex justify-content-between align-items-center">
+              <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;<span class="empty">&#9733;</span></div>
+              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
+           data-tags="thailand bangkok temples food" data-duration="long" data-likes="73" data-rating="5" data-date="2026-04-01">
+        <div class="tp-card comm-card h-100">
+          <div class="comm-card-img" style="background-image: url('https://images.unsplash.com/photo-1562602833-0f4ab2fc46e3?w=600&q=80')">
+            <span class="comm-region-badge">Asia</span>
+            <button class="like-btn" data-liked="false" onclick="toggleLike(this)" aria-label="Like">
+              <i class="bi bi-heart"></i>
+              <span>73</span>
+            </button>
+          </div>
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="tp-avatar">M</span>
+              <div>
+                <div class="fw-semibold" style="font-size:0.88rem;">Maya T.</div>
+                <div class="tp-text-muted" style="font-size:0.78rem;">April 2026</div>
+              </div>
+            </div>
+            <h5 class="card-title">Thailand: 10 Days Bangkok to Islands</h5>
+            <p class="card-text flex-grow-1">Grand Palace and street food in Bangkok, then crystal-clear Koh Lanta beaches. The ultimate Thai adventure.</p>
+            <div class="comm-tags mb-2">
+              <span class="comm-chip">Thailand</span>
+              <span class="comm-chip">Temples</span>
+              <span class="comm-chip">10 days</span>
+            </div>
+            <div class="comm-card-footer d-flex justify-content-between align-items-center">
+              <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 6 -->
+      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
+           data-tags="peru machu picchu hiking adventure" data-duration="long" data-likes="58" data-rating="4" data-date="2026-03-20">
+        <div class="tp-card comm-card h-100">
+          <div class="comm-card-img" style="background-image: url('https://images.unsplash.com/photo-1526392060635-9d6019884377?w=600&q=80')">
+            <span class="comm-region-badge">Americas</span>
+            <button class="like-btn" data-liked="false" onclick="toggleLike(this)" aria-label="Like">
+              <i class="bi bi-heart"></i>
+              <span>58</span>
+            </button>
+          </div>
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="tp-avatar coral">C</span>
+              <div>
+                <div class="fw-semibold" style="font-size:0.88rem;">Carlos V.</div>
+                <div class="tp-text-muted" style="font-size:0.78rem;">March 2026</div>
+              </div>
+            </div>
+            <h5 class="card-title">Peru: Inca Trail &amp; Machu Picchu — 9 Days</h5>
+            <p class="card-text flex-grow-1">Trek the legendary Inca Trail at sunrise, discover Cusco's colonial streets, and feel the magic of Machu Picchu.</p>
+            <div class="comm-tags mb-2">
+              <span class="comm-chip">Peru</span>
+              <span class="comm-chip">Hiking</span>
+              <span class="comm-chip">9 days</span>
+            </div>
+            <div class="comm-card-footer d-flex justify-content-between align-items-center">
+              <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;<span class="empty">&#9733;</span></div>
+              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /row#cards-grid -->
+
+    <!-- Empty state (hidden by default) -->
+    <div class="tp-empty d-none" id="no-results">
+      <div class="tp-empty-icon"><i class="bi bi-map"></i></div>
+      <h5>No itineraries found</h5>
+      <p>Try a different search term or clear your filters.</p>
+      <button class="btn btn-tp-secondary" onclick="clearFilters()">Clear filters</button>
+    </div>
+
+  </div>
+</section>
+
+<!-- ==================== PRINT AREA ==================== -->
+<div id="print-area" class="comm-print-area d-none">
+  <h2 class="tp-font-display mb-4">SmartVoyage — Community Itineraries</h2>
+  <p class="tp-text-muted mb-4">Printed from SmartVoyage on <span id="print-date"></span></p>
+  <div id="print-cards"></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /* ── Filter & Sort ─────────────────────────────────────── */
+  function applyFilters() {
+    const query    = document.getElementById('comm-search').value.toLowerCase().trim();
+    const duration = document.getElementById('comm-duration').value;
+    const sort     = document.getElementById('comm-sort').value;
+
+    const cards = Array.from(document.querySelectorAll('.comm-card-wrap'));
+    let visible = [];
+
+    cards.forEach(function(card) {
+      const tags     = card.dataset.tags || '';
+      const dur      = card.dataset.duration;
+      const matchQ   = !query || tags.includes(query);
+      const matchDur = !duration || dur === duration;
+
+      if (matchQ && matchDur) {
+        card.classList.remove('d-none');
+        visible.push(card);
+      } else {
+        card.classList.add('d-none');
+      }
+    });
+
+    // Sort visible cards
+    const grid = document.getElementById('cards-grid');
+    visible.sort(function(a, b) {
+      if (sort === 'likes')  return parseInt(b.dataset.likes)  - parseInt(a.dataset.likes);
+      if (sort === 'rating') return parseInt(b.dataset.rating) - parseInt(a.dataset.rating);
+      if (sort === 'newest') return new Date(b.dataset.date)   - new Date(a.dataset.date);
+      return 0;
+    });
+    visible.forEach(function(c) { grid.appendChild(c); });
+
+    // Update count
+    const count = document.getElementById('result-count');
+    count.textContent = visible.length === 0
+      ? 'No itineraries found'
+      : 'Showing ' + visible.length + ' itinerar' + (visible.length !== 1 ? 'ies' : 'y');
+
+    document.getElementById('no-results').classList.toggle('d-none', visible.length > 0);
+  }
+
+  /* ── Clear Filters ──────────────────────────────────────── */
+  function clearFilters() {
+    document.getElementById('comm-search').value = '';
+    document.getElementById('comm-duration').value = '';
+    document.getElementById('comm-sort').value = 'likes';
+    applyFilters();
+  }
+
+  /* ── Filter by Trending Chip ────────────────────────────── */
+  function filterByTag(tag) {
+    document.getElementById('comm-search').value = tag;
+    applyFilters();
+  }
+
+  /* ── Like Toggle ────────────────────────────────────────── */
+  function toggleLike(btn) {
+    const liked    = btn.dataset.liked === 'true';
+    const countEl  = btn.querySelector('span');
+    const count    = parseInt(countEl.textContent);
+
+    if (liked) {
+      btn.dataset.liked = 'false';
+      btn.classList.remove('liked');
+      countEl.textContent = count - 1;
+    } else {
+      btn.dataset.liked = 'true';
+      btn.classList.add('liked');
+      countEl.textContent = count + 1;
+    }
+  }
+
+  /* ── Print Itinerary ────────────────────────────────────── */
+  function printItinerary() {
+    const visibleCards = document.querySelectorAll('.comm-card-wrap:not(.d-none)');
+    const printCards   = document.getElementById('print-cards');
+    const printArea    = document.getElementById('print-area');
+
+    document.getElementById('print-date').textContent = new Date().toLocaleDateString('en-AU', {
+      day: 'numeric', month: 'long', year: 'numeric'
+    });
+
+    printCards.innerHTML = '';
+    visibleCards.forEach(function(card) {
+      const title  = card.querySelector('.card-title')   ? card.querySelector('.card-title').textContent   : '';
+      const desc   = card.querySelector('.card-text')    ? card.querySelector('.card-text').textContent    : '';
+      const chips  = Array.from(card.querySelectorAll('.comm-chip')).map(function(c) { return c.textContent; }).join(' · ');
+      const stars  = card.querySelector('.tp-stars')     ? card.querySelector('.tp-stars').textContent     : '';
+      const author = card.querySelector('.fw-semibold')  ? card.querySelector('.fw-semibold').textContent  : '';
+
+      printCards.innerHTML +=
+        '<div class="mb-4 pb-3 border-bottom">' +
+          '<h4>' + title + '</h4>' +
+          '<p class="mb-1"><strong>By:</strong> ' + author + ' &nbsp;|&nbsp; <strong>Tags:</strong> ' + chips + ' &nbsp;|&nbsp; ' + stars + '</p>' +
+          '<p>' + desc + '</p>' +
+        '</div>';
+    });
+
+    printArea.classList.remove('d-none');
+    window.print();
+    printArea.classList.add('d-none');
+  }
+</script>
+{% endblock %}
