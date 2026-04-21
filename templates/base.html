@@ -23,9 +23,17 @@
       <ul class="navbar-nav ms-auto align-items-center gap-1">
         <li class="nav-item"><a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" href="{{ url_for('main.index') }}">Home</a></li>
         <li class="nav-item"><a class="nav-link {% if request.endpoint == 'main.community' %}active{% endif %}" href="{{ url_for('main.community') }}">Community</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">My Itineraries</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">Login</a></li>
-        <li class="nav-item ms-lg-2"><a class="btn btn-tp-dark" href="#">Register</a></li>
+        {% if g.user %}
+          <li class="nav-item"><a class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}" href="{{ url_for('main.dashboard') }}">My Itineraries</a></li>
+          {% if g.user.role == 'admin' %}
+            <li class="nav-item"><a class="nav-link {% if request.endpoint == 'main.admin_dashboard' %}active{% endif %}" href="{{ url_for('main.admin_dashboard') }}">Admin</a></li>
+          {% endif %}
+          <li class="nav-item"><span class="nav-link" style="color:var(--tp-teal); font-weight:600;">{{ g.user.username }}</span></li>
+          <li class="nav-item ms-lg-2"><a class="btn btn-tp-dark" href="{{ url_for('main.logout') }}">Log Out</a></li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('main.login') }}">Login</a></li>
+          <li class="nav-item ms-lg-2"><a class="btn btn-tp-dark" href="{{ url_for('main.register') }}">Register</a></li>
+        {% endif %}
       </ul>
     </div>
   </div>
@@ -57,8 +65,12 @@
       </div>
       <div class="col-md-4 mb-3">
         <h6 class="text-white mb-2">Account</h6>
-        <a href="#" class="d-block mb-1">Login</a>
-        <a href="#" class="d-block mb-1">Register</a>
+        {% if g.user %}
+          <a href="{{ url_for('main.logout') }}" class="d-block mb-1">Log Out</a>
+        {% else %}
+          <a href="{{ url_for('main.login') }}" class="d-block mb-1">Login</a>
+          <a href="{{ url_for('main.register') }}" class="d-block mb-1">Register</a>
+        {% endif %}
       </div>
     </div>
     <hr style="border-color:rgba(255,255,255,0.15);">
