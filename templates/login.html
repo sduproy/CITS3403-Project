@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Log In · SmartVoyage{% endblock %}
+
+{% block content %}
+<section class="tp-section tp-bg-teal-lt">
+  <div class="container">
+    <div class="d-flex justify-content-center">
+      <div class="tp-auth-card">
+        <h2>Welcome Back</h2>
+        <form method="POST" action="{{ url_for('main.login') }}">
+          <div class="mb-3">
+            <label for="username" class="form-label" style="font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--tp-gray-500);">Username or Email</label>
+            <input type="text" id="username" name="username"
+                   class="form-control tp-input" required autofocus
+                   placeholder="Your username or email"
+                   value="{{ request.form.username or '' }}">
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label" style="font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--tp-gray-500);">Password</label>
+            <input type="password" id="password" name="password"
+                   class="form-control tp-input" required
+                   placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn btn-tp-dark w-100 mb-3">Log In</button>
+          <p class="text-center mb-0" style="font-size:0.9rem;">
+            Don't have an account? <a href="{{ url_for('main.register') }}">Register</a>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
