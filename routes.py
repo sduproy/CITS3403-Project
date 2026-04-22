@@ -1,4 +1,3 @@
-from flask import Blueprint, render_template
 import functools
 import sqlite3
 
@@ -68,14 +67,6 @@ def index():
 @main.route("/community")
 def community():
     return render_template("community.html")
-
-
-# Route stubs to add as features land:
-#   /register, /login, /logout             (auth)
-#   /dashboard                             (user's saved itineraries)
-#   /itinerary/new, /itinerary/<int:id>    (AI generation + detail page)
-#   /admin, /admin/users, /admin/itineraries  (admin dashboard)
-    return render_template("Popular.html")
 
 
 @main.route("/register", methods=("GET", "POST"))
