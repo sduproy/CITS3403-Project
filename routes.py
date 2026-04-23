@@ -160,6 +160,9 @@ def dashboard():
 def admin_dashboard():
     return render_template("admin_dashboard.html")
 
-
+#This is basically the /itinerary but something else is named that rn
+@main.route("/trip_details")
+def trip_details():
+    return render_template("trip_details.html")
 # Route stubs to add as features land:
 #   /itinerary/new, /itinerary/<int:id>      (AI generation + detail page)
