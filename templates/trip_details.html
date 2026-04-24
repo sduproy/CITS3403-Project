@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Trip Detail · SmartVoyage{% endblock %}
+{% block content %}
+
+<h1>
+    Tokyo to Kyoto
+</h1>
+
+<div class = "mt-2 d-flex gap-2 flex-wrap">
+    <button id="btnprev" class="btn-tp-secondary" style = "display:none">Previous Day</button>
+    <button id="btnnext" class="btn-tp-secondary">Next Day</button>
+</div>
+
+
+<div class = "tp-itinerary-day" id = "Day 1">
+    <div class = "tp-day-label">
+        Day 1 - Tokyo
+    </div>
+
+    <div class = "tp-time-block">
+        <div class = "tp-time-label">
+            9:00AM
+        </div>
+        <div class = "tp-time-content">
+            Breakfast at Kurokatsusan
+        </div>
+    </div>
+    <div class = "tp-time-block">
+        <div class = "tp-time-label">
+            11:00AM
+        </div>
+        <div class = "tp-time-content">
+            Sushi making class at NOBU
+        </div>
+    </div>
+    <div class = "tp-time-block">
+        <div class = "tp-time-label">
+            3:00PM
+        </div>
+        <div class = "tp-time-content">
+            City bus tour
+        </div>
+    </div>
+</div>
+
+
+<div class = "tp-itinerary-day" id = "Day 2">
+    <div class = "tp-day-label">
+        Day 2 - Tokyo/Kyoto
+    </div>
+
+    <div class = "tp-time-block">
+        <div class = "tp-time-label">
+            9:00AM
+        </div>
+        <div class = "tp-time-content">
+            Hotel checkout
+        </div>
+    </div>
+    <div class = "tp-time-block">
+        <div class = "tp-time-label">
+            11:00AM
+        </div>
+        <div class = "tp-time-content">
+            Flight to Kyoto
+        </div>
+    </div>
+    <div class = "tp-time-block">
+        <div class = "tp-time-label">
+            3:00PM
+        </div>
+        <div class = "tp-time-content">
+            Hotel Checkin
+        </div>
+    </div>
+
+
+    <div class = "tp-time-block">
+        <div class = "tp-time-label">
+            7:00PM
+        </div>
+        <div class = "tp-time-content">
+            Gion District night market
+        </div>
+    </div>
+</div>
+<div class = "tp-itinerary-day" id = "Day 3">
+    <div class = "tp-day-label">
+        Day 3 - Kyoto
+    </div>
+
+    <div class = "tp-time-block">
+        <div class = "tp-time-label">
+            9:00AM
+        </div>
+        <div class = "tp-time-content">
+            Breakfast at somewhere in kyoto
+        </div>
+    </div>
+    <div class = "tp-time-block">
+        <div class = "tp-time-label">
+            11:00AM
+        </div>
+        <div class = "tp-time-content">
+            SSleep
+        </div>
+    </div>
+    <div class = "tp-time-block">
+        <div class = "tp-time-label">
+            3:00PM
+        </div>
+        <div class = "tp-time-content">
+            More sleep
+        </div>
+    </div>
+</div>
+
+
+
+
+<script>
+    const days = document.querySelectorAll('.tp-itinerary-day')
+    let counter = 0
+    days.forEach(function(day){
+        if (counter==0){
+            counter+=1
+            return
+        }
+        else{
+            day.style.display='none'
+        }
+    })
+
+    let scroll = 0
+    btnprev.addEventListener('click',function(){
+        days[scroll].style.display = 'none'
+        days[scroll-1].style.display = ''
+        scroll -= 1
+        if (scroll == 0){
+            btnprev.style.display = 'none'
+        }
+
+        else{
+            btnnext.style.display = ''
+        }
+    })
+
+    btnnext.addEventListener('click',function(){
+        days[scroll].style.display = 'none'
+        days[scroll+1].style.display = ''
+        scroll += 1
+        if (scroll == (days.length-1)){
+            btnnext.style.display = 'none'
+        }
+
+        else{
+            btnprev.style.display = ''
+        }
+    })
+
+</script>
+
+
+</div>
+
+
+{% endblock %}

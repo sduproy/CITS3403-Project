@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sign in or create your AgileTravel account to start planning smarter trips.">
+  <title>Sign In — AgileTravel</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ==================== NAVBAR ==================== -->
+  <nav class="navbar navbar-expand-lg site-navbar" id="main-nav">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">
+        <i class="bi bi-compass"></i> AgileTravel
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ms-auto me-3">
+          <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="planner.html">Planner</a></li>
+          <li class="nav-item"><a class="nav-link" href="board.html">Itineraries</a></li>
+        </ul>
+        <a href="login.html" class="btn btn-cta active" id="nav-login-btn">
+          <i class="bi bi-person"></i> Sign In
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==================== AUTH SECTION ==================== -->
+  <section class="auth-wrapper" id="auth-section">
+    <div class="auth-container">
+
+      <div class="auth-header">
+        <h1>Welcome Back</h1>
+        <p>Sign in to access your itineraries, or create a new account below.</p>
+      </div>
+
+      <!-- Tabs -->
+      <ul class="nav nav-tabs mb-4" id="authTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#loginPane"
+                  type="button" role="tab" aria-controls="loginPane" aria-selected="true">Sign In</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#registerPane"
+                  type="button" role="tab" aria-controls="registerPane" aria-selected="false">Create Account</button>
+        </li>
+      </ul>
+
+      <div class="tab-content" id="authTabContent">
+
+        <!-- ========== LOGIN TAB ========== -->
+        <div class="tab-pane fade show active" id="loginPane" role="tabpanel" aria-labelledby="login-tab">
+          <div class="auth-card">
+
+            <!-- Social Login -->
+            <div class="social-login">
+              <button type="button" class="btn" id="login-google-btn">
+                <i class="bi bi-google"></i> Google
+              </button>
+              <button type="button" class="btn" id="login-apple-btn">
+                <i class="bi bi-apple"></i> Apple
+              </button>
+              <button type="button" class="btn" id="login-github-btn">
+                <i class="bi bi-github"></i> GitHub
+              </button>
+            </div>
+
+            <div class="auth-divider">or sign in with email</div>
+
+            <form id="login-form" action="#" method="post" novalidate>
+              <!-- Email -->
+              <div class="mb-3">
+                <label for="login-email" class="form-label">Email Address</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                  <input type="email" class="form-control" id="login-email" name="email"
+                         placeholder="you@example.com" required autocomplete="email">
+                </div>
+              </div>
+
+              <!-- Password -->
+              <div class="mb-3">
+                <label for="login-password" class="form-label">Password</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                  <input type="password" class="form-control" id="login-password" name="password"
+                         placeholder="••••••••" required autocomplete="current-password">
+                </div>
+              </div>
+
+              <!-- Remember + Forgot -->
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="login-remember" name="remember">
+                  <label class="form-check-label" for="login-remember" style="font-size:var(--fs-sm);">Remember me</label>
+                </div>
+                <a href="#" style="font-size:var(--fs-sm);">Forgot password?</a>
+              </div>
+
+              <!-- Hidden field -->
+              <input type="hidden" name="form_type" value="login">
+
+              <button type="submit" class="btn btn-primary w-100 btn-lg" id="login-submit-btn">
+                Sign In <i class="bi bi-arrow-right"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- ========== REGISTER TAB ========== -->
+        <div class="tab-pane fade" id="registerPane" role="tabpanel" aria-labelledby="register-tab">
+          <div class="auth-card">
+
+            <form id="register-form" action="#" method="post" enctype="multipart/form-data" novalidate>
+
+              <!-- Full Name (text) -->
+              <div class="mb-3">
+                <label for="reg-name" class="form-label">Full Name</label>
+                <input type="text" class="form-control" id="reg-name" name="full_name"
+                       placeholder="Jane Doe" required autocomplete="name">
+              </div>
+
+              <!-- Email (email) -->
+              <div class="mb-3">
+                <label for="reg-email" class="form-label">Email Address</label>
+                <input type="email" class="form-control" id="reg-email" name="email"
+                       placeholder="you@example.com" required autocomplete="email">
+              </div>
+
+              <!-- Phone (tel) -->
+              <div class="mb-3">
+                <label for="reg-phone" class="form-label">Phone Number</label>
+                <div class="input-group">
+                  <span class="input-group-text">+</span>
+                  <input type="tel" class="form-control" id="reg-phone" name="phone"
+                         placeholder="61 400 123 456" autocomplete="tel">
+                </div>
+                <div class="form-hint">Optional — for SMS trip reminders</div>
+              </div>
+
+              <!-- Password (password) -->
+              <div class="mb-3">
+                <label for="reg-password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="reg-password" name="password"
+                       placeholder="Minimum 8 characters" required autocomplete="new-password"
+                       minlength="8">
+                <div class="password-strength mt-2">
+                  <span class="active"></span>
+                  <span class="active"></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <div class="form-hint">Use letters, numbers, and symbols for a strong password.</div>
+              </div>
+
+              <!-- Confirm Password -->
+              <div class="mb-3">
+                <label for="reg-confirm-password" class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" id="reg-confirm-password" name="password_confirm"
+                       placeholder="Re-enter your password" required autocomplete="new-password">
+              </div>
+
+              <!-- Date of Birth (date) -->
+              <div class="mb-3">
+                <label for="reg-dob" class="form-label">Date of Birth</label>
+                <input type="date" class="form-control" id="reg-dob" name="date_of_birth">
+              </div>
+
+              <!-- Gender (radio) -->
+              <div class="mb-3">
+                <label class="form-label d-block">Gender</label>
+                <div class="d-flex flex-wrap gap-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="gender" id="reg-gender-female" value="female">
+                    <label class="form-check-label" for="reg-gender-female">Female</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="gender" id="reg-gender-male" value="male">
+                    <label class="form-check-label" for="reg-gender-male">Male</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="gender" id="reg-gender-nonbinary" value="nonbinary">
+                    <label class="form-check-label" for="reg-gender-nonbinary">Non-binary</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="gender" id="reg-gender-prefer" value="prefer_not">
+                    <label class="form-check-label" for="reg-gender-prefer">Prefer not to say</label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Country (select) -->
+              <div class="mb-3">
+                <label for="reg-country" class="form-label">Country</label>
+                <select class="form-select" id="reg-country" name="country" required>
+                  <option value="" disabled selected>Select your country</option>
+                  <option value="AU">Australia</option>
+                  <option value="CA">Canada</option>
+                  <option value="FR">France</option>
+                  <option value="DE">Germany</option>
+                  <option value="IN">India</option>
+                  <option value="JP">Japan</option>
+                  <option value="NZ">New Zealand</option>
+                  <option value="SG">Singapore</option>
+                  <option value="GB">United Kingdom</option>
+                  <option value="US">United States</option>
+                  <option value="ZA">South Africa</option>
+                  <option value="BR">Brazil</option>
+                </select>
+              </div>
+
+              <!-- Travel Interests (checkbox group) -->
+              <div class="mb-3">
+                <label class="form-label d-block">Travel Interests</label>
+                <div class="d-flex flex-wrap gap-2">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="reg-int-culture" name="interests" value="culture">
+                    <label class="form-check-label" for="reg-int-culture">Culture</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="reg-int-food" name="interests" value="food">
+                    <label class="form-check-label" for="reg-int-food">Food</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="reg-int-adventure" name="interests" value="adventure">
+                    <label class="form-check-label" for="reg-int-adventure">Adventure</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="reg-int-nature" name="interests" value="nature">
+                    <label class="form-check-label" for="reg-int-nature">Nature</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="reg-int-nightlife" name="interests" value="nightlife">
+                    <label class="form-check-label" for="reg-int-nightlife">Nightlife</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="reg-int-history" name="interests" value="history">
+                    <label class="form-check-label" for="reg-int-history">History</label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Experience Level (range) -->
+              <div class="mb-3">
+                <label for="reg-experience" class="form-label">Travel Experience Level</label>
+                <input type="range" class="form-range" id="reg-experience" name="experience"
+                       min="1" max="5" step="1" value="3">
+                <div class="d-flex justify-content-between" style="font-size:var(--fs-xs);color:var(--text-light);">
+                  <span>Beginner</span>
+                  <span>Intermediate</span>
+                  <span>Expert</span>
+                </div>
+              </div>
+
+              <!-- Number of trips per year (number) -->
+              <div class="mb-3">
+                <label for="reg-trips" class="form-label">Trips Per Year</label>
+                <input type="number" class="form-control" id="reg-trips" name="trips_per_year"
+                       min="0" max="50" step="1" placeholder="e.g. 3">
+              </div>
+
+              <!-- Profile Picture (file) -->
+              <div class="mb-3">
+                <label for="reg-avatar" class="form-label">Profile Picture</label>
+                <input class="form-control" type="file" id="reg-avatar" name="avatar"
+                       accept="image/png, image/jpeg, image/webp">
+                <div class="form-hint">JPG, PNG, or WebP. Max 5 MB.</div>
+              </div>
+
+              <!-- Preferred Theme Color (color) -->
+              <div class="mb-3">
+                <label for="reg-color" class="form-label">Preferred Theme Color</label>
+                <div class="d-flex align-items-center gap-3">
+                  <input type="color" class="form-control form-control-color" id="reg-color"
+                         name="theme_color" value="#1a8a7a" title="Choose a colour">
+                  <span style="font-size:var(--fs-sm);color:var(--text-secondary);">
+                    Personalise your dashboard
+                  </span>
+                </div>
+              </div>
+
+              <!-- Bio (textarea) -->
+              <div class="mb-3">
+                <label for="reg-bio" class="form-label">Bio</label>
+                <textarea class="form-control" id="reg-bio" name="bio" rows="3"
+                          placeholder="Tell us about your travel style..."></textarea>
+                <div class="form-hint">Max 300 characters</div>
+              </div>
+
+              <!-- URL — travel blog (url) -->
+              <div class="mb-3">
+                <label for="reg-website" class="form-label">Travel Blog / Website</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-globe"></i></span>
+                  <input type="url" class="form-control" id="reg-website" name="website"
+                         placeholder="https://yourblog.com">
+                </div>
+              </div>
+
+              <!-- Newsletter opt-in + Search (search input type) -->
+              <div class="mb-3">
+                <label for="reg-referral" class="form-label">How Did You Hear About Us?</label>
+                <input type="search" class="form-control" id="reg-referral" name="referral"
+                       placeholder="Search or type a source..." list="referral-sources">
+                <datalist id="referral-sources">
+                  <option value="Google Search">
+                  <option value="Instagram">
+                  <option value="Twitter / X">
+                  <option value="YouTube">
+                  <option value="Friend Referral">
+                  <option value="Blog Post">
+                  <option value="Travel Forum">
+                </datalist>
+              </div>
+
+              <!-- Newsletter (checkbox) -->
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="reg-newsletter" name="newsletter" checked>
+                <label class="form-check-label" for="reg-newsletter">
+                  Send me weekly travel inspiration and deals
+                </label>
+              </div>
+
+              <!-- Terms (checkbox, required) -->
+              <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" id="reg-terms" name="terms" required>
+                <label class="form-check-label" for="reg-terms">
+                  I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                </label>
+              </div>
+
+              <!-- Hidden fields -->
+              <input type="hidden" name="form_type" value="register">
+              <input type="hidden" name="signup_source" value="web_app">
+
+              <button type="submit" class="btn btn-secondary w-100 btn-lg" id="register-submit-btn">
+                Create Account <i class="bi bi-arrow-right"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div><!-- /tab-content -->
+    </div>
+  </section>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="site-footer" id="footer">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-lg-4 col-md-6">
+          <div class="footer-brand"><i class="bi bi-compass"></i> AgileTravel</div>
+          <p class="footer-desc">
+            Smart itinerary planning powered by AI and real-time transit data. Travel without the guesswork.
+          </p>
+          <div class="footer-social mt-3">
+            <a href="#" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
+            <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+            <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+            <a href="#" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-6 col-6">
+          <h4 class="footer-heading">Product</h4>
+          <ul class="footer-links">
+            <li><a href="planner.html">Planner</a></li>
+            <li><a href="board.html">Itineraries</a></li>
+            <li><a href="#">Pricing</a></li>
+            <li><a href="#">API</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-2 col-md-6 col-6">
+          <h4 class="footer-heading">Company</h4>
+          <ul class="footer-links">
+            <li><a href="#">About</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Press</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-2 col-md-6 col-6">
+          <h4 class="footer-heading">Support</h4>
+          <ul class="footer-links">
+            <li><a href="#">Help Centre</a></li>
+            <li><a href="#">Contact</a></li>
+            <li><a href="#">Privacy</a></li>
+            <li><a href="#">Terms</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-2 col-md-6 col-6">
+          <h4 class="footer-heading">Explore</h4>
+          <ul class="footer-links">
+            <li><a href="#">Destinations</a></li>
+            <li><a href="#">Guides</a></li>
+            <li><a href="#">Community</a></li>
+            <li><a href="#">Partners</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 AgileTravel. All rights reserved.</span>
+        <span>Made with <i class="bi bi-heart-fill text-accent"></i> for travellers.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

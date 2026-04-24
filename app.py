@@ -1,10 +1,21 @@
-from flask import Flask, render_template
+from pathlib import Path
 
-app = Flask(__name__)
+from flask import Flask
 
-@app.route('/')
-def index():
-    return render_template('itinerary.html')
+import db
+from routes import main
 
-if __name__ == '__main__':
+
+app = Flask(__name__, instance_relative_config=True)
+app.config.from_mapping(
+    SECRET_KEY="dev-change-me-before-deploy",
+    DATABASE=str(Path(app.instance_path) / "travelplan.sqlite"),
+)
+Path(app.instance_path).mkdir(parents=True, exist_ok=True)
+
+db.init_app(app)
+app.register_blueprint(main)
+
+
+if __name__ == "__main__":
     app.run(debug=True)

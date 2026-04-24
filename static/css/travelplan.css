@@ -1,0 +1,946 @@
+/* ============================================================
+   TravelPlan — Shared Stylesheet
+   Layer this ON TOP of Bootstrap 5.
+   Link order in your HTML:
+     1. Bootstrap CSS (CDN)
+     2. This file (travelplan.css)
+   ============================================================ */
+
+/* ----- Google Fonts -----
+   Add this in your <head> BEFORE this stylesheet:
+   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+*/
+
+/* ===================
+   1. CSS Variables
+   =================== */
+:root {
+  /* Primary palette — Green + Navy/Dark Blue */
+  --tp-teal:        #2e8b6e;
+  --tp-teal-dark:   #237a5a;
+  --tp-teal-light:  #e0f2eb;
+  --tp-sand:        #f2f7fb;
+  --tp-sand-dark:   #d4e6f1;
+  --tp-coral:       #1b3a5c;
+  --tp-coral-dark:  #0f2235;
+  --tp-gold:        #d4a23a;
+  --tp-gold-light:  #fdf4e0;
+  --tp-slate:       #0f2235;
+  --tp-slate-light: #1b3a5c;
+  --tp-gray-100:    #f8f9fa;
+  --tp-gray-200:    #e9ecef;
+  --tp-gray-500:    #8c959d;
+  --tp-gray-700:    #495057;
+  --tp-white:       #ffffff;
+  --tp-danger:      #dc3545;
+
+  /* Typography */
+  --tp-font-display: 'DM Serif Display', Georgia, serif;
+  --tp-font-body:    'DM Sans', system-ui, sans-serif;
+
+  /* Spacing helpers */
+  --tp-section-py: 4.5rem;
+  --tp-radius:     0.625rem;
+  --tp-radius-lg:  1rem;
+  --tp-radius-xl:  1.5rem;
+  --tp-radius-pill: 2rem;
+
+  /* Shadows */
+  --tp-shadow-sm:  0 1px 3px rgba(0,0,0,0.06);
+  --tp-shadow:     0 4px 12px rgba(0,0,0,0.08);
+  --tp-shadow-lg:  0 8px 30px rgba(0,0,0,0.12);
+
+  /* Transitions */
+  --tp-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+/* ===================
+   2. Base / Reset
+   =================== */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--tp-font-body);
+  color: var(--tp-slate);
+  background-color: var(--tp-sand);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Page-load fade-in */
+@keyframes tp-fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+body > *:not(script) {
+  animation: tp-fadeIn 0.6s var(--tp-ease) both;
+}
+body > *:nth-child(2) { animation-delay: 0.08s; }
+body > *:nth-child(3) { animation-delay: 0.16s; }
+body > *:nth-child(4) { animation-delay: 0.24s; }
+body > *:nth-child(5) { animation-delay: 0.32s; }
+
+h1, h2, h3, h4, h5, h6,
+.tp-heading {
+  font-family: var(--tp-font-display);
+  color: var(--tp-slate);
+  line-height: 1.2;
+}
+
+a {
+  color: var(--tp-teal);
+  transition: color 0.2s var(--tp-ease);
+}
+a:hover {
+  color: var(--tp-teal-dark);
+}
+
+::selection {
+  background: var(--tp-teal);
+  color: var(--tp-white);
+}
+
+/* Keyboard-only focus ring */
+*:focus-visible {
+  outline: 2px solid var(--tp-teal);
+  outline-offset: 2px;
+}
+
+
+/* ===================
+   3. Navbar
+   =================== */
+.tp-navbar {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 0.75rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+.tp-navbar .navbar-brand {
+  font-family: var(--tp-font-display);
+  font-size: 1.5rem;
+  color: var(--tp-slate);
+  letter-spacing: -0.02em;
+}
+.tp-navbar .navbar-brand span {
+  color: var(--tp-teal);
+  font-style: italic;
+}
+
+.tp-navbar .nav-link {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: rgba(44, 62, 80, 0.6);
+  padding: 0.5rem 1rem !important;
+  border-radius: var(--tp-radius-pill);
+  transition: background 0.2s var(--tp-ease), color 0.2s var(--tp-ease);
+}
+.tp-navbar .nav-link:hover,
+.tp-navbar .nav-link.active {
+  color: var(--tp-slate);
+  background: var(--tp-teal-light);
+}
+
+
+/* ===================
+   4. Buttons (pill-shaped)
+   =================== */
+
+/* Primary — solid teal pill */
+.btn-tp-primary {
+  background: var(--tp-teal);
+  color: var(--tp-white);
+  border: none;
+  font-weight: 500;
+  padding: 0.7rem 1.6rem;
+  font-size: 0.92rem;
+  border-radius: var(--tp-radius-pill);
+  text-decoration: none;
+  display: inline-block;
+  transition: transform 0.2s var(--tp-ease), box-shadow 0.2s var(--tp-ease), background 0.2s var(--tp-ease);
+}
+.btn-tp-primary:hover {
+  background: var(--tp-teal-dark);
+  color: var(--tp-white);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(46, 139, 110, 0.25);
+}
+.btn-tp-primary:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Secondary — outline teal pill */
+.btn-tp-secondary {
+  background: transparent;
+  color: var(--tp-teal);
+  border: 2px solid var(--tp-teal);
+  font-weight: 500;
+  padding: 0.6rem 1.5rem;
+  font-size: 0.92rem;
+  border-radius: var(--tp-radius-pill);
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.2s var(--tp-ease), color 0.2s var(--tp-ease), transform 0.2s var(--tp-ease);
+}
+.btn-tp-secondary:hover {
+  background: var(--tp-teal);
+  color: var(--tp-white);
+  transform: translateY(-2px);
+}
+
+/* Coral — solid coral pill for hero CTA */
+.btn-tp-coral {
+  background: var(--tp-coral);
+  color: var(--tp-white);
+  border: none;
+  font-weight: 500;
+  padding: 0.7rem 1.6rem;
+  font-size: 0.92rem;
+  border-radius: var(--tp-radius-pill);
+  text-decoration: none;
+  display: inline-block;
+  transition: transform 0.2s var(--tp-ease), box-shadow 0.2s var(--tp-ease), background 0.2s var(--tp-ease);
+}
+.btn-tp-coral:hover {
+  background: var(--tp-coral-dark);
+  color: var(--tp-white);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(27, 58, 92, 0.25);
+}
+
+/* Dark — solid ink/slate pill (for navbar CTA) */
+.btn-tp-dark {
+  background: var(--tp-slate);
+  color: var(--tp-white);
+  border: none;
+  font-weight: 500;
+  padding: 0.55rem 1.4rem;
+  font-size: 0.88rem;
+  border-radius: var(--tp-radius-pill);
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.2s var(--tp-ease);
+}
+.btn-tp-dark:hover {
+  background: var(--tp-teal);
+  color: var(--tp-white);
+}
+
+/* Ghost — subtle text-only with optional arrow */
+.btn-tp-ghost {
+  background: none;
+  border: none;
+  color: var(--tp-slate);
+  opacity: 0.55;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.4rem 0;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: opacity 0.2s var(--tp-ease);
+}
+.btn-tp-ghost:hover {
+  opacity: 1;
+  color: var(--tp-slate);
+}
+
+/* Danger — outline red pill */
+.btn-tp-danger {
+  background: transparent;
+  color: var(--tp-danger);
+  border: 2px solid var(--tp-danger);
+  font-weight: 500;
+  padding: 0.55rem 1.3rem;
+  font-size: 0.88rem;
+  border-radius: var(--tp-radius-pill);
+  transition: background 0.2s var(--tp-ease), color 0.2s var(--tp-ease);
+}
+.btn-tp-danger:hover {
+  background: var(--tp-danger);
+  color: var(--tp-white);
+}
+
+
+/* ===================
+   5. Hero Section
+   =================== */
+.tp-hero {
+  background: linear-gradient(135deg, var(--tp-slate) 0%, var(--tp-teal-dark) 100%);
+  color: var(--tp-white);
+  padding: 5rem 0 4rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.tp-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(27, 58, 92, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(46, 139, 110, 0.12) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.tp-hero-eyebrow {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tp-white);
+  margin-bottom: 0.75rem;
+}
+
+.tp-hero h1 {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  color: var(--tp-white);
+  margin-bottom: 1rem;
+}
+.tp-hero h1 em {
+  color: var(--tp-teal);
+  font-style: italic;
+}
+.tp-hero p {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  opacity: 0.7;
+  max-width: 560px;
+  margin: 0 auto 2rem;
+}
+
+
+/* ===================
+   6. Cards
+   =================== */
+.tp-card {
+  background: var(--tp-white);
+  border: none;
+  border-radius: var(--tp-radius-lg);
+  box-shadow: var(--tp-shadow);
+  transition: transform 0.3s var(--tp-ease), box-shadow 0.3s var(--tp-ease);
+  overflow: hidden;
+}
+.tp-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--tp-shadow-lg);
+}
+
+.tp-card .card-body {
+  padding: 1.5rem;
+}
+.tp-card .card-title {
+  font-family: var(--tp-font-display);
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+.tp-card .card-text {
+  color: var(--tp-gray-700);
+  font-size: 0.925rem;
+}
+
+/* Card with a colored top border accent */
+.tp-card-accent {
+  border-top: 4px solid var(--tp-teal);
+}
+.tp-card-accent.coral {
+  border-top-color: var(--tp-coral);
+}
+.tp-card-accent.gold {
+  border-top-color: var(--tp-gold);
+}
+
+
+/* ===================
+   7. Trip Form
+   =================== */
+.tp-trip-form {
+  background: var(--tp-white);
+  border-radius: var(--tp-radius-xl);
+  padding: 2rem;
+  box-shadow: var(--tp-shadow-lg);
+  max-width: 640px;
+  margin: -2.5rem auto 0;
+  position: relative;
+  z-index: 10;
+}
+
+.tp-trip-form label {
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tp-gray-500);
+  margin-bottom: 0.35rem;
+}
+
+
+/* ===================
+   8. Form Controls
+   =================== */
+.tp-input {
+  border: 2px solid var(--tp-gray-200);
+  border-radius: var(--tp-radius);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.95rem;
+  transition: border-color 0.2s var(--tp-ease), box-shadow 0.2s var(--tp-ease);
+  background: var(--tp-white);
+}
+.tp-input:focus {
+  border-color: var(--tp-teal);
+  box-shadow: 0 0 0 3px rgba(46, 139, 110, 0.12);
+  outline: none;
+}
+.tp-input::placeholder {
+  color: rgba(44, 62, 80, 0.3);
+}
+
+/* Validation states */
+.tp-input.is-valid {
+  border-color: var(--tp-teal);
+}
+.tp-input.is-invalid {
+  border-color: var(--tp-danger);
+}
+.tp-input.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12);
+}
+.tp-form-error {
+  color: var(--tp-danger);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+/* For Bootstrap's .form-select */
+.tp-select {
+  border: 2px solid var(--tp-gray-200);
+  border-radius: var(--tp-radius);
+  padding: 0.625rem 0.875rem;
+  transition: border-color 0.2s var(--tp-ease);
+}
+.tp-select:focus {
+  border-color: var(--tp-teal);
+  box-shadow: 0 0 0 3px rgba(46, 139, 110, 0.12);
+}
+
+
+/* ===================
+   9. Auth Pages
+   =================== */
+.tp-auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background:
+    linear-gradient(160deg, var(--tp-sand) 0%, var(--tp-teal-light) 100%);
+}
+
+.tp-auth-card {
+  background: var(--tp-white);
+  border-radius: var(--tp-radius-xl);
+  box-shadow: var(--tp-shadow-lg);
+  width: 100%;
+  max-width: 420px;
+  padding: 2.5rem 2rem;
+}
+
+.tp-auth-card h2 {
+  font-family: var(--tp-font-display);
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+
+/* ===================
+   10. Itinerary Display
+   =================== */
+.tp-itinerary-day {
+  background: var(--tp-white);
+  border-radius: var(--tp-radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--tp-shadow-sm);
+  border-left: 4px solid var(--tp-teal);
+  transition: border-color 0.3s var(--tp-ease);
+}
+.tp-itinerary-day:hover {
+  border-left-color: var(--tp-coral);
+}
+
+.tp-day-label {
+  font-family: var(--tp-font-display);
+  font-size: 1.1rem;
+  color: var(--tp-teal);
+  margin-bottom: 0.75rem;
+}
+
+.tp-time-block {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--tp-gray-200);
+}
+.tp-time-block:last-child {
+  border-bottom: none;
+}
+
+.tp-time-label {
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tp-coral);
+  min-width: 80px;
+  padding-top: 0.1rem;
+}
+
+.tp-time-content {
+  flex: 1;
+  font-size: 0.95rem;
+  color: var(--tp-slate);
+}
+
+
+/* ===================
+   11. Dashboard
+   =================== */
+.tp-dashboard-header {
+  padding: 2.5rem 0 1.5rem;
+}
+.tp-dashboard-header h2 {
+  font-family: var(--tp-font-display);
+}
+
+.tp-trip-row {
+  background: var(--tp-white);
+  border-radius: var(--tp-radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  box-shadow: var(--tp-shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: box-shadow 0.2s var(--tp-ease);
+}
+.tp-trip-row:hover {
+  box-shadow: var(--tp-shadow);
+}
+
+.tp-badge-public {
+  background: var(--tp-teal-light);
+  color: var(--tp-teal);
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+.tp-badge-private {
+  background: var(--tp-gray-200);
+  color: var(--tp-gray-700);
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+
+/* Public/Private toggle switch */
+.tp-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.tp-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.tp-toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--tp-gray-200);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.25s var(--tp-ease);
+}
+.tp-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: var(--tp-white);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  transition: transform 0.25s var(--tp-ease);
+}
+.tp-toggle input:checked + .tp-toggle-track {
+  background: var(--tp-teal);
+}
+.tp-toggle input:checked + .tp-toggle-track::after {
+  transform: translateX(20px);
+}
+
+
+/* ===================
+   12. Community Page
+   =================== */
+.tp-section {
+  padding: var(--tp-section-py) 0;
+}
+.tp-section-title {
+  font-family: var(--tp-font-display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin-bottom: 0.5rem;
+}
+.tp-section-subtitle {
+  color: var(--tp-gray-500);
+  margin-bottom: 2rem;
+}
+
+.tp-trending-chip {
+  display: inline-block;
+  background: var(--tp-gold-light);
+  color: var(--tp-gold);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  margin: 0.25rem;
+  transition: background 0.2s var(--tp-ease), transform 0.15s var(--tp-ease);
+  cursor: pointer;
+}
+.tp-trending-chip:hover {
+  background: var(--tp-gold);
+  color: var(--tp-white);
+  transform: scale(1.05);
+}
+
+
+/* ===================
+   13. Reviews & Ratings
+   =================== */
+.tp-stars {
+  color: var(--tp-gold);
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+}
+.tp-stars .empty {
+  color: var(--tp-gray-200);
+}
+
+/* Interactive star rating input */
+.tp-star-input {
+  display: inline-flex;
+  gap: 0.15rem;
+  direction: rtl;
+}
+.tp-star-input input {
+  display: none;
+}
+.tp-star-input label {
+  font-size: 1.5rem;
+  color: var(--tp-gray-200);
+  cursor: pointer;
+  transition: color 0.15s var(--tp-ease);
+}
+.tp-star-input input:checked ~ label,
+.tp-star-input label:hover,
+.tp-star-input label:hover ~ label {
+  color: var(--tp-gold);
+}
+
+.tp-review {
+  background: var(--tp-gray-100);
+  border-radius: var(--tp-radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+.tp-review-author {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+.tp-review-text {
+  font-size: 0.9rem;
+  color: var(--tp-gray-700);
+}
+
+/* User avatar circle (shows initial) */
+.tp-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--tp-teal);
+  color: var(--tp-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.tp-avatar.coral  { background: var(--tp-coral); }
+.tp-avatar.gold   { background: var(--tp-gold); }
+.tp-avatar.slate  { background: var(--tp-slate); }
+
+
+/* ===================
+   14. "How It Works"
+   =================== */
+.tp-steps {
+  counter-reset: step;
+}
+.tp-step {
+  text-align: center;
+  padding: 1.5rem 1rem;
+}
+.tp-step::before {
+  counter-increment: step;
+  content: counter(step);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem;
+  background: var(--tp-teal);
+  color: var(--tp-white);
+  font-family: var(--tp-font-display);
+  font-size: 1.25rem;
+  border-radius: 50%;
+}
+.tp-step h5 {
+  font-family: var(--tp-font-display);
+  margin-bottom: 0.35rem;
+}
+.tp-step p {
+  font-size: 0.9rem;
+  color: var(--tp-gray-700);
+}
+
+
+/* ===================
+   15. Footer
+   =================== */
+.tp-footer {
+  background: var(--tp-slate);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 2.5rem 0 1.5rem;
+  font-size: 0.9rem;
+}
+.tp-footer a {
+  color: rgba(255, 255, 255, 0.85);
+}
+.tp-footer a:hover {
+  color: var(--tp-white);
+}
+.tp-footer-brand {
+  font-family: var(--tp-font-display);
+  font-size: 1.3rem;
+  color: var(--tp-white);
+}
+
+
+/* ===================
+   16. Flash Messages
+   =================== */
+.tp-alert {
+  border-radius: var(--tp-radius-pill);
+  font-size: 0.9rem;
+  border: none;
+  padding: 0.75rem 1.25rem;
+}
+.tp-alert-success {
+  background: var(--tp-teal-light);
+  color: var(--tp-teal-dark);
+}
+.tp-alert-error {
+  background: #fde8e8;
+  color: #b91c1c;
+}
+
+
+/* ===================
+   17. Loading & Empty States
+   =================== */
+
+/* AI generating spinner */
+.tp-loader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  color: var(--tp-gray-500);
+  font-size: 0.95rem;
+}
+.tp-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--tp-gray-200);
+  border-top-color: var(--tp-teal);
+  border-radius: 50%;
+  animation: tp-spin 0.7s linear infinite;
+}
+@keyframes tp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Skeleton loading placeholders */
+.tp-skeleton {
+  background: linear-gradient(90deg, var(--tp-gray-200) 25%, var(--tp-gray-100) 50%, var(--tp-gray-200) 75%);
+  background-size: 200% 100%;
+  animation: tp-shimmer 1.5s ease infinite;
+  border-radius: var(--tp-radius);
+}
+.tp-skeleton-text {
+  height: 14px;
+  margin-bottom: 0.5rem;
+  width: 80%;
+}
+.tp-skeleton-text.short { width: 45%; }
+.tp-skeleton-title {
+  height: 20px;
+  width: 60%;
+  margin-bottom: 0.75rem;
+}
+.tp-skeleton-card {
+  height: 160px;
+  border-radius: var(--tp-radius-lg);
+}
+@keyframes tp-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Empty state */
+.tp-empty {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--tp-gray-500);
+}
+.tp-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.4;
+}
+.tp-empty h5 {
+  font-family: var(--tp-font-display);
+  color: var(--tp-slate);
+  margin-bottom: 0.35rem;
+}
+.tp-empty p {
+  font-size: 0.9rem;
+  max-width: 320px;
+  margin: 0 auto 1.25rem;
+}
+
+
+/* ===================
+   18. Print Styles
+   =================== */
+@media print {
+  /* Hide interactive elements */
+  .tp-navbar,
+  .tp-footer,
+  .btn-tp-primary,
+  .btn-tp-secondary,
+  .btn-tp-coral,
+  .btn-tp-dark,
+  .btn-tp-ghost,
+  .btn-tp-danger,
+  .tp-toggle,
+  .tp-trip-form,
+  .tp-star-input {
+    display: none !important;
+  }
+
+  /* Clean print base */
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+  body > * {
+    animation: none !important;
+  }
+
+  /* Keep itinerary days together */
+  .tp-itinerary-day {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+    margin-bottom: 0.5rem;
+  }
+
+  .tp-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+
+  a { color: #000; text-decoration: none; }
+
+  .tp-hero {
+    background: none !important;
+    color: #000;
+    padding: 1rem 0;
+  }
+  .tp-hero h1 { color: #000; }
+  .tp-hero::before { display: none; }
+}
+
+
+/* ===================
+   19. Utilities
+   =================== */
+.tp-text-teal   { color: var(--tp-teal) !important; }
+.tp-text-coral  { color: var(--tp-coral) !important; }
+.tp-text-gold   { color: var(--tp-gold) !important; }
+.tp-text-muted  { color: var(--tp-gray-500) !important; }
+.tp-bg-sand     { background-color: var(--tp-sand) !important; }
+.tp-bg-white    { background-color: var(--tp-white) !important; }
+.tp-bg-teal-lt  { background-color: var(--tp-teal-light) !important; }
+
+.tp-rounded     { border-radius: var(--tp-radius) !important; }
+.tp-rounded-lg  { border-radius: var(--tp-radius-lg) !important; }
+.tp-rounded-xl  { border-radius: var(--tp-radius-xl) !important; }
+.tp-rounded-pill { border-radius: var(--tp-radius-pill) !important; }
+
+.tp-shadow      { box-shadow: var(--tp-shadow) !important; }
+.tp-shadow-lg   { box-shadow: var(--tp-shadow-lg) !important; }
+
+
+/* ===================
+   20. Responsive
+   =================== */
+@media (max-width: 768px) {
+  .tp-hero {
+    padding: 3.5rem 0 3rem;
+  }
+  .tp-trip-form {
+    margin-top: -1.5rem;
+    padding: 1.5rem;
+  }
+  .tp-trip-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .tp-section {
+    padding: 3rem 0;
+  }
+}
