@@ -129,58 +129,59 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const days = document.querySelectorAll('.tp-itinerary-day')
-        let counter = 0
-        days.forEach(function(day){
-            if (counter==0){
-                counter+=1
-                return
+            const days = document.querySelectorAll('.tp-itinerary-day')
+            let counter = 0
+            days.forEach(function(day){
+                if (counter==0){
+                    counter+=1
+                    return
+                }
+                else{
+                    day.style.display='none'
+                }
+            })
+        
+
+
+        let scroll = 0
+        btnprev.addEventListener('click',function(){
+            days[scroll].style.display = 'none'
+            days[scroll-1].style.display = ''
+            scroll -= 1
+            if (scroll == 0){
+                btnprev.style.display = 'none'
             }
+
             else{
-                day.style.display='none'
+                btnnext.style.display = ''
             }
         })
-    })
 
+        btnnext.addEventListener('click',function(){
+            days[scroll].style.display = 'none'
+            days[scroll+1].style.display = ''
+            scroll += 1
+            if (scroll == (days.length-1)){
+                btnnext.style.display = 'none'
+            }
 
-    let scroll = 0
-    btnprev.addEventListener('click',function(){
-        days[scroll].style.display = 'none'
-        days[scroll-1].style.display = ''
-        scroll -= 1
-        if (scroll == 0){
-            btnprev.style.display = 'none'
-        }
-
-        else{
-            btnnext.style.display = ''
-        }
-    })
-
-    btnnext.addEventListener('click',function(){
-        days[scroll].style.display = 'none'
-        days[scroll+1].style.display = ''
-        scroll += 1
-        if (scroll == (days.length-1)){
-            btnnext.style.display = 'none'
-        }
-
-        else{
-            btnprev.style.display = ''
-        }
-    })
-
-
-    const activities = document.querySelectorAll('.tp-time-content')
-    activities.forEach(function(activity){
-        activity.addEventListener('click',function(){
-            document.getElementById('modalTitle').innerText = activity.dataset.title
-            document.getElementById('modalBody').innerText = activity.dataset.info
-            const modalElement = document.getElementById('activityModal')
-            const modalInstance = new bootstrap.Modal(modalElement)
-            modalInstance.show()
+            else{
+                btnprev.style.display = ''
+            }
         })
-    })
+
+
+        const activities = document.querySelectorAll('.tp-time-content')
+        activities.forEach(function(activity){
+            activity.addEventListener('click',function(){
+                document.getElementById('modalTitle').innerText = activity.dataset.title
+                document.getElementById('modalBody').innerText = activity.dataset.info
+                const modalElement = document.getElementById('activityModal')
+                const modalInstance = new bootstrap.Modal(modalElement)
+                modalInstance.show()
+            })
+        })
+})
 </script>
 
 
