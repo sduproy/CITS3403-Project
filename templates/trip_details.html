@@ -122,7 +122,10 @@
         <h5 class="modal-title" id="modalTitle"></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-body" id="modalBody">
+        <p id="modalInfo"></p>
+        <a id="modalMapLink" href="#" target="_blank" class="btn-tp-secondary">View on Google Maps</a>
+    </div>
     </div>
   </div>
 </div>
@@ -173,14 +176,16 @@
 
         const activities = document.querySelectorAll('.tp-time-content')
         activities.forEach(function(activity){
-            activity.addEventListener('click',function(){
-                document.getElementById('modalTitle').innerText = activity.dataset.title
-                document.getElementById('modalBody').innerText = activity.dataset.info
-                const modalElement = document.getElementById('activityModal')
-                const modalInstance = new bootstrap.Modal(modalElement)
-                modalInstance.show()
-            })
+            activity.addEventListener('click', function() {
+            document.getElementById('modalTitle').innerText = activity.dataset.title
+            document.getElementById('modalInfo').innerText = activity.dataset.info
+            document.getElementById('modalMapLink').href = `https://www.google.com/maps/search/${encodeURIComponent(activity.dataset.title)}`
+            const modalElement = document.getElementById('activityModal')
+            const modalInstance = new bootstrap.Modal(modalElement)
+            modalInstance.show()
         })
+        })
+
 })
 </script>
 
