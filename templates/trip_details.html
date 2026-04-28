@@ -6,6 +6,8 @@
     Tokyo to Kyoto
 </h1>
 
+<button id = "btnShow" class = "btn-tp-secondary">Show All Days</button>
+
 <div class = "mt-2 d-flex gap-2 flex-wrap">
     <button id="btnprev" class="btn-tp-secondary" style = "display:none">Previous Day</button>
     <button id="btnnext" class="btn-tp-secondary">Next Day</button>
@@ -90,6 +92,25 @@
 
             else{
                 btnprev.style.display = ''
+            }
+        })
+
+        btnShow.addEventListener('click',function(){
+            if (btnShow.innerText == "Show All Days"){
+                days.forEach(function(day){
+                    day.style.display = ''
+                    btnShow.innerText = "Show Day by Day"
+                    btnnext.style.display = 'none'
+                    btnprev.style.display = 'none'
+                })
+            }
+            else{
+                days.forEach(function(day){
+                    day.style.display = 'none'
+                    days[0].style.display = ''
+                    btnShow.innerText = "Show All Days"
+                    btnnext.style.display = ''
+                })
             }
         })
 
