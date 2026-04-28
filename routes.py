@@ -166,3 +166,33 @@ def trip_details():
     return render_template("trip_details.html")
 # Route stubs to add as features land:
 #   /itinerary/new, /itinerary/<int:id>      (AI generation + detail page)
+
+
+
+@main.route("/itinerary/new", methods=["POST"])
+@login_required
+def new_itinerary():
+    destination = request.form.get("destination", "").strip()
+    start_date = request.form.get("start_date", "").strip()
+    end_date = request.form.get("end_date", "").strip()
+
+    error = None
+    if not destination:
+        error = "Please enter a destination."
+    elif not start_date or not end_date:
+        error = "Please select start and end dates."
+    elif end_date < start_date:
+        error = "End date must be after start date."
+
+    if error:
+        flash(error, "error")
+        return redirect(url_for("main.index"))
+    
+    db = get_db()
+    cursor = db.execute(
+        "INSERT INTO itineraries (user_id, destination, start_date, end_date, content)"
+        " VALUES (?, ?, ?, ?, ?)",
+        (g.user["id"], destination, start_date, end_date, ""),
+    )
+    db.commit()
+    return redirect(url_for("main.trip_details", id=cursor.lastrowid))
