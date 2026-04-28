@@ -203,3 +203,17 @@ def new_itinerary():
     )
     db.commit()
     return redirect(url_for("main.trip_details", id=cursor.lastrowid))
+
+
+#Deleting and itinerary
+@main.route("/itinerary/<int:id>/delete", methods=["POST"])
+@login_required
+def delete_itinerary(id):
+    db = get_db()
+    db.execute(
+        "DELETE FROM itineraries WHERE id = ? AND user_id = ?",
+        (id, g.user["id"])
+    )
+    db.commit()
+    flash("Itinerary deleted.", "success")
+    return redirect(url_for("main.dashboard"))

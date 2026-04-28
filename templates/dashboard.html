@@ -18,6 +18,9 @@
             <h5>{{ itinerary['destination'] }}</h5>
             <p class="tp-text-muted">{{ itinerary['start_date'] }} -> {{ itinerary ['end_date'] }}</p>
             <a href="{{ url_for('main.trip_details', id=itinerary['id']) }}" class="btn btn-tp-primary">View</a>
+            <form method="POST" action="{{url_for('main.delete_itinerary', id=itinerary['id']) }}">
+              <button type="submit" class="btn btn-tp-dark">Delete</button>
+            </form>
           </div>
         </div>
       {% endfor %}
