@@ -14,7 +14,7 @@
     {% if itineraries %}
       {% for itinerary in itineraries %}
         <div class="tp-card mb-3">
-          <div class="tp-card-body">
+          <div class="card-body">
             <h5>{{ itinerary['destination'] }}</h5>
             <p class="tp-text-muted">{{ itinerary['start_date'] }} -> {{ itinerary ['end_date'] }}</p>
             <a href="{{ url_for('main.trip_details', id=itinerary['id']) }}" class="btn btn-tp-primary">View</a>
