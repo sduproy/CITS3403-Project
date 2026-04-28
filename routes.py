@@ -152,7 +152,11 @@ def logout():
 @main.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html")
+    itineraries = get_db().execute(
+        "SELECT * FROM itineraries WHERE user_id = ? ORDER BY created_at DESC",
+        (g.user["id"],)
+    ).fetchall()
+    return render_template("dashboard.html",itineraries=itineraries)
 
 
 @main.route("/admin")
@@ -161,8 +165,55 @@ def admin_dashboard():
     return render_template("admin_dashboard.html")
 
 #This is basically the /itinerary but something else is named that rn
-@main.route("/trip_details")
-def trip_details():
-    return render_template("trip_details.html")
+@main.route("/trip_details/<int:id>")
+def trip_details(id):
+    itinerary = get_db().execute(
+        "SELECT * FROM itineraries WHERE id = ?", (id,)
+    ).fetchone()
+    return render_template("trip_details.html", itinerary=itinerary)
 # Route stubs to add as features land:
-#   /itinerary/new, /itinerary/<int:id>      (AI generation + detail page)
+#   /itinerary/new (done), /itinerary/<int:id> (done)      (AI generation + detail page)
+
+
+
+@main.route("/itinerary/new", methods=["POST"])
+@login_required
+def new_itinerary():
+    destination = request.form.get("destination", "").strip()
+    start_date = request.form.get("start_date", "").strip()
+    end_date = request.form.get("end_date", "").strip()
+
+    error = None
+    if not destination:
+        error = "Please enter a destination."
+    elif not start_date or not end_date:
+        error = "Please select start and end dates."
+    elif end_date < start_date:
+        error = "End date must be after start date."
+
+    if error:
+        flash(error, "error")
+        return redirect(url_for("main.index"))
+    
+    db = get_db()
+    cursor = db.execute(
+        "INSERT INTO itineraries (user_id, destination, start_date, end_date, content)"
+        " VALUES (?, ?, ?, ?, ?)",
+        (g.user["id"], destination, start_date, end_date, ""),
+    )
+    db.commit()
+    return redirect(url_for("main.trip_details", id=cursor.lastrowid))
+
+
+#Deleting and itinerary
+@main.route("/itinerary/<int:id>/delete", methods=["POST"])
+@login_required
+def delete_itinerary(id):
+    db = get_db()
+    db.execute(
+        "DELETE FROM itineraries WHERE id = ? AND user_id = ?",
+        (id, g.user["id"])
+    )
+    db.commit()
+    flash("Itinerary deleted.", "success")
+    return redirect(url_for("main.dashboard"))

@@ -11,13 +11,27 @@
       <p class="tp-text-muted mb-0">Welcome back, {{ g.user.username }}.</p>
     </div>
 
-    {# Empty state — placeholder until itinerary save/list lands in a later branch #}
-    <div class="tp-empty">
-      <div class="tp-empty-icon"><i class="bi bi-map"></i></div>
-      <h5>No itineraries yet</h5>
-      <p>Plan your first trip and it'll show up here. It only takes a minute!</p>
-      <a href="{{ url_for('main.index') }}#trip-form" class="btn btn-tp-primary">Plan a Trip</a>
-    </div>
+    {% if itineraries %}
+      {% for itinerary in itineraries %}
+        <div class="tp-card mb-3">
+          <div class="card-body">
+            <h5>{{ itinerary['destination'] }}</h5>
+            <p class="tp-text-muted">{{ itinerary['start_date'] }} -> {{ itinerary ['end_date'] }}</p>
+            <a href="{{ url_for('main.trip_details', id=itinerary['id']) }}" class="btn btn-tp-primary">View</a>
+            <form method="POST" action="{{url_for('main.delete_itinerary', id=itinerary['id']) }}">
+              <button type="submit" class="btn btn-tp-dark">Delete</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+        <div class="tp-empty">
+          <div class="tp-empty-icon"><i class="bi bi-map"></i></div>
+          <h5>No itineraries yet</h5>
+          <p>Plan your first trip and it will show up here. Only takes a minute!</p>
+          <a href="{{ url_for('main.index') }}#trip-form" class="btn btn-tp-primary">Plan a Trip</a>
+        </div>
+    {% endif %}
 
   </div>
 </section>
