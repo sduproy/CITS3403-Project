@@ -152,7 +152,11 @@ def logout():
 @main.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html")
+    itineraries = get_db().execute(
+        "SELECT * FROM itineraries WHERE user_id = ? ORDER BY created_at DESC",
+        (g.user["id"],)
+    ).fetchall()
+    return render_template("dashboard.html",itineraries=itineraries)
 
 
 @main.route("/admin")
@@ -168,7 +172,7 @@ def trip_details(id):
     ).fetchone()
     return render_template("trip_details.html", itinerary=itinerary)
 # Route stubs to add as features land:
-#   /itinerary/new, /itinerary/<int:id>      (AI generation + detail page)
+#   /itinerary/new (done), /itinerary/<int:id> (done)      (AI generation + detail page)
 
 
 
