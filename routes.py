@@ -164,12 +164,43 @@ def dashboard():
 def admin_dashboard():
     return render_template("admin_dashboard.html")
 
+
+
+
+
 #This is basically the /itinerary but something else is named that rn
+
 @main.route("/trip_details/<int:id>")
 def trip_details(id):
-    itinerary = get_db().execute(
+    itinerary = {
+        'destination': 'Tokyo to Kyoto',
+        'days': [
+            {
+                'label': 'Day 1 - Tokyo',
+                'activities': [
+                    {'time': '9:00AM', 'title': 'Breakfast at Kurokatsusan', 'info': 'Famous breakfast spot in Tokyo.'},
+                    {'time': '11:00AM', 'title': 'Sushi making class at NOBU', 'info': 'World class sushi course.'},
+                    {'time': '3:00PM', 'title': 'City Bus Tour', 'info': 'See the famous spots with a tour guide.'},
+                ]
+            },
+            {
+                'label': 'Day 2 - Kyoto',
+                'activities': [
+                    {'time': '9:00AM', 'title': 'Hotel Checkout', 'info': 'Check out and head to Kyoto.'},
+                    {'time': '11:00AM', 'title': 'Flight to Kyoto', 'info': 'Make sure not to miss it!'},
+                    {'time': '3:00PM', 'title': 'Hotel Checkin', 'info': 'Check into your new hotel.'},
+                    {'time': '7:00PM', 'title': 'Gion District Night Market', 'info': 'Famous Kyoto night life.'},
+                ]
+            }
+        ]
+    }
+    
+    
+    '''get_db().execute(
         "SELECT * FROM itineraries WHERE id = ?", (id,)
-    ).fetchone()
+    ).fetchone()'''
+#Commented out for fake data trial
+
     return render_template("trip_details.html", itinerary=itinerary)
 # Route stubs to add as features land:
 #   /itinerary/new (done), /itinerary/<int:id> (done)      (AI generation + detail page)
