@@ -21,7 +21,7 @@
         <div class = "tp-time-label">
             9:00AM
         </div>
-        <div class = "tp-time-content">
+        <div class="tp-time-content" data-title="Breakfast at Kurokatsusan" data-info="Famous Japanese breakfast spot in central Tokyo." style="cursor:pointer">
             Breakfast at Kurokatsusan
         </div>
     </div>
@@ -29,7 +29,7 @@
         <div class = "tp-time-label">
             11:00AM
         </div>
-        <div class = "tp-time-content">
+        <div class="tp-time-content" data-title="Sushi making class at NOBU" data-info="World class sushi making course with provided lunch." style="cursor:pointer">
             Sushi making class at NOBU
         </div>
     </div>
@@ -37,7 +37,7 @@
         <div class = "tp-time-label">
             3:00PM
         </div>
-        <div class = "tp-time-content">
+        <div class="tp-time-content" data-title="City Bus Tour" data-info="See the famous spots with a specialised tour bus and tour guide" style="cursor:pointer">
             City bus tour
         </div>
     </div>
@@ -53,7 +53,7 @@
         <div class = "tp-time-label">
             9:00AM
         </div>
-        <div class = "tp-time-content">
+        <div class="tp-time-content" data-title="Hotel Checkout" data-info="Enjoy your last night at the hotel and check out in the morning." style="cursor:pointer">
             Hotel checkout
         </div>
     </div>
@@ -61,7 +61,7 @@
         <div class = "tp-time-label">
             11:00AM
         </div>
-        <div class = "tp-time-content">
+        <div class="tp-time-content" data-title="Flight to Kokyo" data-info="Flight from Tokyo airport, make sure not to miss it!" style="cursor:pointer">
             Flight to Kyoto
         </div>
     </div>
@@ -69,7 +69,7 @@
         <div class = "tp-time-label">
             3:00PM
         </div>
-        <div class = "tp-time-content">
+        <div class="tp-time-content" data-title="Hotel Checkin" data-info="Check into your new hotel for the next 5 nights." style="cursor:pointer">
             Hotel Checkin
         </div>
     </div>
@@ -79,7 +79,7 @@
         <div class = "tp-time-label">
             7:00PM
         </div>
-        <div class = "tp-time-content">
+        <div class="tp-time-content" data-title="Gion Disctrict Night Market" data-info="Explore the famous night life at Gion Disctrict Night Market." style="cursor:pointer">
             Gion District night market
         </div>
     </div>
@@ -93,7 +93,7 @@
         <div class = "tp-time-label">
             9:00AM
         </div>
-        <div class = "tp-time-content">
+        <div class="tp-time-content" data-title="Breakfast" data-info="Eat some food" style="cursor:pointer">
             Breakfast at somewhere in kyoto
         </div>
     </div>
@@ -101,7 +101,7 @@
         <div class = "tp-time-label">
             11:00AM
         </div>
-        <div class = "tp-time-content">
+        <div class="tp-time-content" data-title="Sleep" data-info="Get some rest" style="cursor:pointer">
             SSleep
         </div>
     </div>
@@ -109,55 +109,84 @@
         <div class = "tp-time-label">
             3:00PM
         </div>
-        <div class = "tp-time-content">
+        <div class="tp-time-content" data-title="More Sleep" data-info="Get some more rest" style="cursor:pointer">
             More sleep
         </div>
     </div>
 </div>
 
-
-
+<div class="modal fade" id="activityModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <p id="modalInfo"></p>
+        <a id="modalMapLink" href="#" target="_blank" class="btn-tp-secondary">View on Google Maps</a>
+    </div>
+    </div>
+  </div>
+</div>
 
 <script>
-    const days = document.querySelectorAll('.tp-itinerary-day')
-    let counter = 0
-    days.forEach(function(day){
-        if (counter==0){
-            counter+=1
-            return
-        }
-        else{
-            day.style.display='none'
-        }
-    })
+    document.addEventListener('DOMContentLoaded', function() {
+            const days = document.querySelectorAll('.tp-itinerary-day')
+            let counter = 0
+            days.forEach(function(day){
+                if (counter==0){
+                    counter+=1
+                    return
+                }
+                else{
+                    day.style.display='none'
+                }
+            })
+        
 
-    let scroll = 0
-    btnprev.addEventListener('click',function(){
-        days[scroll].style.display = 'none'
-        days[scroll-1].style.display = ''
-        scroll -= 1
-        if (scroll == 0){
-            btnprev.style.display = 'none'
-        }
 
-        else{
-            btnnext.style.display = ''
-        }
-    })
+        let scroll = 0
+        btnprev.addEventListener('click',function(){
+            days[scroll].style.display = 'none'
+            days[scroll-1].style.display = ''
+            scroll -= 1
+            if (scroll == 0){
+                btnprev.style.display = 'none'
+            }
 
-    btnnext.addEventListener('click',function(){
-        days[scroll].style.display = 'none'
-        days[scroll+1].style.display = ''
-        scroll += 1
-        if (scroll == (days.length-1)){
-            btnnext.style.display = 'none'
-        }
+            else{
+                btnnext.style.display = ''
+            }
+        })
 
-        else{
-            btnprev.style.display = ''
-        }
-    })
+        btnnext.addEventListener('click',function(){
+            days[scroll].style.display = 'none'
+            days[scroll+1].style.display = ''
+            scroll += 1
+            if (scroll == (days.length-1)){
+                btnnext.style.display = 'none'
+            }
 
+            else{
+                btnprev.style.display = ''
+            }
+        })
+
+
+        const activities = document.querySelectorAll('.tp-time-content')
+        activities.forEach(function(activity){
+            activity.addEventListener('click', function() {
+            document.getElementById('modalTitle').innerText = activity.dataset.title
+            document.getElementById('modalInfo').innerText = activity.dataset.info
+            document.getElementById('modalMapLink').href = `https://www.google.com/maps/search/${encodeURIComponent(activity.dataset.title)}`
+            const modalElement = document.getElementById('activityModal')
+            const modalInstance = new bootstrap.Modal(modalElement)
+            modalInstance.show()
+        })
+        })
+
+})
 </script>
 
 
