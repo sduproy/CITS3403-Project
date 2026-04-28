@@ -161,9 +161,12 @@ def admin_dashboard():
     return render_template("admin_dashboard.html")
 
 #This is basically the /itinerary but something else is named that rn
-@main.route("/trip_details")
-def trip_details():
-    return render_template("trip_details.html")
+@main.route("/trip_details/<int:id>")
+def trip_details(id):
+    itinerary = get_db().execute(
+        "SELECT * FROM itineraries WHERE id = ?", (id,)
+    ).fetchone()
+    return render_template("trip_details.html", itinerary=itinerary)
 # Route stubs to add as features land:
 #   /itinerary/new, /itinerary/<int:id>      (AI generation + detail page)
 
