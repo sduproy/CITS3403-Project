@@ -1,11 +1,20 @@
 """
 Application routes.
 
-Phase A of the security refactor: queries that previously used the raw
-sqlite3 cursor (g.db.execute("SELECT ...?")) now go through the
-SQLAlchemy ORM. The session/auth flow is otherwise unchanged from M1-M5
-plus Sakindu's itinerary save/view/delete additions; Phase B will
-replace the manual session handling with Flask-Login.
+Phase B of the security refactor: Flask-Login replaces the manual
+session["user_id"] / g.user mechanism. Highlights:
+
+- ``@login_required`` is imported from ``flask_login`` (still preserves
+  ``?next=`` automatically — Flask-Login redirects anonymous users to
+  ``login.login_view`` with the original path appended).
+- ``current_user`` (a thread-local proxy from Flask-Login) replaces
+  ``g.user`` everywhere, including the templates that previously read
+  ``g.user.username`` / ``g.user.role``.
+- ``login_user(user)`` and ``logout_user()`` replace the manual
+  ``session["user_id"] = ...`` / ``session.clear()`` calls.
+- The ``admin_required`` decorator stays custom — Flask-Login doesn't
+  cover role-based authorisation, only authentication. It now reads
+  ``current_user`` instead of ``g.user``.
 """
 
 import functools
@@ -14,13 +23,12 @@ from datetime import date
 from flask import (
     Blueprint,
     flash,
-    g,
     redirect,
     render_template,
     request,
-    session,
     url_for,
 )
+from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -30,39 +38,20 @@ from models import Itinerary, User
 main = Blueprint("main", __name__)
 
 
-def login_required(view):
-    """Redirect anonymous users to the login page, preserving the target URL."""
-
-    @functools.wraps(view)
-    def wrapped_view(**kwargs):
-        if g.user is None:
-            flash("Please log in to access this page.", "error")
-            return redirect(url_for("main.login", next=request.path))
-        return view(**kwargs)
-
-    return wrapped_view
-
-
 def admin_required(view):
-    """Gate a view to users with role == 'admin'. Anon users get sent to login."""
+    """Gate a view to users with role == 'admin'. Anon users go to login."""
 
     @functools.wraps(view)
     def wrapped_view(**kwargs):
-        if g.user is None:
+        if not current_user.is_authenticated:
             flash("Please log in to access this page.", "error")
             return redirect(url_for("main.login", next=request.path))
-        if g.user.role != "admin":
+        if current_user.role != "admin":
             flash("Admin access required.", "error")
             return redirect(url_for("main.index"))
         return view(**kwargs)
 
     return wrapped_view
-
-
-@main.before_app_request
-def load_logged_in_user():
-    user_id = session.get("user_id")
-    g.user = None if user_id is None else db.session.get(User, user_id)
 
 
 @main.route("/")
@@ -132,8 +121,7 @@ def login():
             flash("Invalid username or password.", "error")
             return render_template("login.html")
 
-        session.clear()
-        session["user_id"] = user.id
+        login_user(user)
         flash(f"Welcome back, {user.username}!", "success")
 
         # Honor ?next=<path>, but only relative paths (guard against open redirects).
@@ -150,7 +138,7 @@ def login():
 
 @main.route("/logout")
 def logout():
-    session.clear()
+    logout_user()
     flash("You have been logged out.", "success")
     return redirect(url_for("main.index"))
 
@@ -159,7 +147,7 @@ def logout():
 @login_required
 def dashboard():
     itineraries = (
-        Itinerary.query.filter_by(user_id=g.user.id)
+        Itinerary.query.filter_by(user_id=current_user.id)
         .order_by(Itinerary.created_at.desc())
         .all()
     )
@@ -201,7 +189,7 @@ def new_itinerary():
     # Convert ISO date strings (YYYY-MM-DD from <input type="date">) to date
     # objects so SQLAlchemy's Date column accepts them.
     itinerary = Itinerary(
-        user_id=g.user.id,
+        user_id=current_user.id,
         destination=destination,
         start_date=date.fromisoformat(start_date),
         end_date=date.fromisoformat(end_date),
@@ -215,7 +203,7 @@ def new_itinerary():
 @main.route("/itinerary/<int:id>/delete", methods=["POST"])
 @login_required
 def delete_itinerary(id):
-    itinerary = Itinerary.query.filter_by(id=id, user_id=g.user.id).first()
+    itinerary = Itinerary.query.filter_by(id=id, user_id=current_user.id).first()
     if itinerary is not None:
         db.session.delete(itinerary)
         db.session.commit()
