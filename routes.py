@@ -1,5 +1,15 @@
+"""
+Application routes.
+
+Phase A of the security refactor: queries that previously used the raw
+sqlite3 cursor (g.db.execute("SELECT ...?")) now go through the
+SQLAlchemy ORM. The session/auth flow is otherwise unchanged from M1-M5
+plus Sakindu's itinerary save/view/delete additions; Phase B will
+replace the manual session handling with Flask-Login.
+"""
+
 import functools
-import sqlite3
+from datetime import date
 
 from flask import (
     Blueprint,
@@ -11,9 +21,11 @@ from flask import (
     session,
     url_for,
 )
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from db import get_db
+from extensions import db
+from models import Itinerary, User
 
 main = Blueprint("main", __name__)
 
@@ -39,7 +51,7 @@ def admin_required(view):
         if g.user is None:
             flash("Please log in to access this page.", "error")
             return redirect(url_for("main.login", next=request.path))
-        if g.user["role"] != "admin":
+        if g.user.role != "admin":
             flash("Admin access required.", "error")
             return redirect(url_for("main.index"))
         return view(**kwargs)
@@ -50,13 +62,7 @@ def admin_required(view):
 @main.before_app_request
 def load_logged_in_user():
     user_id = session.get("user_id")
-    if user_id is None:
-        g.user = None
-    else:
-        g.user = get_db().execute(
-            "SELECT id, username, email, role FROM users WHERE id = ?",
-            (user_id,),
-        ).fetchone()
+    g.user = None if user_id is None else db.session.get(User, user_id)
 
 
 @main.route("/")
@@ -87,15 +93,17 @@ def register():
             error = "Password must be at least 6 characters."
 
         if error is None:
-            conn = get_db()
             try:
-                conn.execute(
-                    "INSERT INTO users (username, email, password_hash)"
-                    " VALUES (?, ?, ?)",
-                    (username, email, generate_password_hash(password)),
+                db.session.add(
+                    User(
+                        username=username,
+                        email=email,
+                        password_hash=generate_password_hash(password),
+                    )
                 )
-                conn.commit()
-            except sqlite3.IntegrityError:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
                 error = "That username or email is already registered."
             else:
                 flash("Account created — please log in.", "success")
@@ -116,26 +124,24 @@ def login():
             flash("Please enter your username/email and password.", "error")
             return render_template("login.html")
 
-        user = get_db().execute(
-            "SELECT id, username, password_hash, role FROM users"
-            " WHERE username = ? OR email = ?",
-            (identifier, identifier.lower()),
-        ).fetchone()
+        user = User.query.filter(
+            (User.username == identifier) | (User.email == identifier.lower())
+        ).first()
 
-        if user is None or not check_password_hash(user["password_hash"], password):
+        if user is None or not check_password_hash(user.password_hash, password):
             flash("Invalid username or password.", "error")
             return render_template("login.html")
 
         session.clear()
-        session["user_id"] = user["id"]
-        flash(f"Welcome back, {user['username']}!", "success")
+        session["user_id"] = user.id
+        flash(f"Welcome back, {user.username}!", "success")
 
         # Honor ?next=<path>, but only relative paths (guard against open redirects).
         next_url = request.args.get("next", "")
         if next_url.startswith("/") and not next_url.startswith("//"):
             return redirect(next_url)
 
-        if user["role"] == "admin":
+        if user.role == "admin":
             return redirect(url_for("main.admin_dashboard"))
         return redirect(url_for("main.dashboard"))
 
@@ -152,11 +158,12 @@ def logout():
 @main.route("/dashboard")
 @login_required
 def dashboard():
-    itineraries = get_db().execute(
-        "SELECT * FROM itineraries WHERE user_id = ? ORDER BY created_at DESC",
-        (g.user["id"],)
-    ).fetchall()
-    return render_template("dashboard.html",itineraries=itineraries)
+    itineraries = (
+        Itinerary.query.filter_by(user_id=g.user.id)
+        .order_by(Itinerary.created_at.desc())
+        .all()
+    )
+    return render_template("dashboard.html", itineraries=itineraries)
 
 
 @main.route("/admin")
@@ -164,16 +171,12 @@ def dashboard():
 def admin_dashboard():
     return render_template("admin_dashboard.html")
 
-#This is basically the /itinerary but something else is named that rn
+
+# This is basically the /itinerary but something else is named that rn
 @main.route("/trip_details/<int:id>")
 def trip_details(id):
-    itinerary = get_db().execute(
-        "SELECT * FROM itineraries WHERE id = ?", (id,)
-    ).fetchone()
+    itinerary = db.session.get(Itinerary, id)
     return render_template("trip_details.html", itinerary=itinerary)
-# Route stubs to add as features land:
-#   /itinerary/new (done), /itinerary/<int:id> (done)      (AI generation + detail page)
-
 
 
 @main.route("/itinerary/new", methods=["POST"])
@@ -194,26 +197,31 @@ def new_itinerary():
     if error:
         flash(error, "error")
         return redirect(url_for("main.index"))
-    
-    db = get_db()
-    cursor = db.execute(
-        "INSERT INTO itineraries (user_id, destination, start_date, end_date, content)"
-        " VALUES (?, ?, ?, ?, ?)",
-        (g.user["id"], destination, start_date, end_date, ""),
+
+    # Convert ISO date strings (YYYY-MM-DD from <input type="date">) to date
+    # objects so SQLAlchemy's Date column accepts them.
+    itinerary = Itinerary(
+        user_id=g.user.id,
+        destination=destination,
+        start_date=date.fromisoformat(start_date),
+        end_date=date.fromisoformat(end_date),
+        content="",
     )
-    db.commit()
-    return redirect(url_for("main.trip_details", id=cursor.lastrowid))
+    db.session.add(itinerary)
+    db.session.commit()
+    return redirect(url_for("main.trip_details", id=itinerary.id))
 
 
-#Deleting and itinerary
 @main.route("/itinerary/<int:id>/delete", methods=["POST"])
 @login_required
 def delete_itinerary(id):
-    db = get_db()
-    db.execute(
-        "DELETE FROM itineraries WHERE id = ? AND user_id = ?",
-        (id, g.user["id"])
-    )
-    db.commit()
+    itinerary = Itinerary.query.filter_by(id=id, user_id=g.user.id).first()
+    if itinerary is not None:
+        db.session.delete(itinerary)
+        db.session.commit()
     flash("Itinerary deleted.", "success")
     return redirect(url_for("main.dashboard"))
+
+
+# Route stubs to add as features land:
+#   /itinerary/<int:id>      (full AI-generated itinerary detail page)

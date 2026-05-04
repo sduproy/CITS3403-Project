@@ -1,52 +1,45 @@
-import sqlite3
+"""
+Database CLI helpers.
+
+The raw sqlite3 layer that lived here was replaced by SQLAlchemy in
+the security-lecture-driven refactor (Phase A). This module now only
+holds the ``flask init-db`` command, which:
+
+  1. Drops and recreates every table SQLAlchemy knows about.
+  2. Seeds the default admin user (username: admin, password: admin)
+     so a fresh checkout has a working admin account for local dev.
+
+Models are imported transitively via ``app.py``, so ``db.create_all()``
+sees ``users``, ``itineraries``, and ``reviews``.
+"""
 
 import click
-from flask import current_app, g
+from flask import current_app
 from werkzeug.security import generate_password_hash
 
-
-def get_db():
-    if "db" not in g:
-        g.db = sqlite3.connect(
-            current_app.config["DATABASE"],
-            detect_types=sqlite3.PARSE_DECLTYPES,
-        )
-        g.db.row_factory = sqlite3.Row
-        g.db.execute("PRAGMA foreign_keys = ON")
-    return g.db
-
-
-def close_db(e=None):
-    db = g.pop("db", None)
-    if db is not None:
-        db.close()
+from extensions import db
+from models import User
 
 
 def init_db():
-    db = get_db()
-    with current_app.open_resource("schema.sql") as f:
-        db.executescript(f.read().decode("utf-8"))
+    """Drop all tables, recreate them from the SQLAlchemy models, seed admin."""
+    db.drop_all()
+    db.create_all()
 
-    existing = db.execute(
-        "SELECT id FROM users WHERE username = ?", ("admin",)
-    ).fetchone()
-    if existing is None:
-        db.execute(
-            "INSERT INTO users (username, email, password_hash, role)"
-            " VALUES (?, ?, ?, ?)",
-            (
-                "admin",
-                "admin@smartvoyage.local",
-                generate_password_hash("admin"),
-                "admin",
-            ),
+    if User.query.filter_by(username="admin").first() is None:
+        admin = User(
+            username="admin",
+            email="admin@smartvoyage.local",
+            password_hash=generate_password_hash("admin"),
+            role="admin",
         )
-        db.commit()
+        db.session.add(admin)
+        db.session.commit()
 
 
 @click.command("init-db")
 def init_db_command():
-    """Drop existing tables, recreate schema, and seed the default admin."""
+    """Drop existing tables, recreate schema via SQLAlchemy, seed default admin."""
     init_db()
     click.echo(
         "Initialized the database. "
@@ -55,5 +48,5 @@ def init_db_command():
 
 
 def init_app(app):
-    app.teardown_appcontext(close_db)
+    """Register the init-db CLI command on the given Flask app."""
     app.cli.add_command(init_db_command)
