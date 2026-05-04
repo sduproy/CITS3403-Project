@@ -3,7 +3,7 @@ from pathlib import Path
 from flask import Flask
 
 import db
-from extensions import db as sa_db
+from extensions import db as sa_db, login
 import models  # noqa: F401 — registers models with SQLAlchemy at import time
 from routes import main
 
@@ -19,6 +19,7 @@ app.config.from_mapping(
 )
 
 sa_db.init_app(app)
+login.init_app(app)
 db.init_app(app)
 app.register_blueprint(main)
 
