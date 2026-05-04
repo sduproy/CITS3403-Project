@@ -8,20 +8,25 @@ migration. The only difference is that queries now go through the ORM
 the Flask security lecture flags as the recommended pattern for
 avoiding SQL-injection-style attacks.
 
-Phase B will add ``UserMixin`` to the ``User`` class so Flask-Login can
-use it directly. For Phase A we keep the model plain so this file is
-purely about the ORM migration.
+Phase B (Flask-Login):
+- ``User`` inherits from ``UserMixin``, which provides the four
+  properties Flask-Login expects on a user model: ``is_authenticated``,
+  ``is_active``, ``is_anonymous``, and ``get_id()``.
+- ``load_user`` is registered as the ``@login.user_loader`` callback,
+  so Flask-Login can rehydrate the current user from the session
+  cookie on every request.
 """
 
 from datetime import datetime
 
+from flask_login import UserMixin
 from sqlalchemy import CheckConstraint, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from extensions import db
+from extensions import db, login
 
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     """A registered SmartVoyage user (regular or admin)."""
 
     __tablename__ = "users"
@@ -113,3 +118,15 @@ class Review(db.Model):
 
     def __repr__(self):  # pragma: no cover
         return f"<Review {self.id} itin={self.itinerary_id} user={self.user_id} rating={self.rating}>"
+
+
+@login.user_loader
+def load_user(user_id):
+    """Rehydrate the user model from the ID stored in the session cookie.
+
+    Flask-Login serialises ``user.get_id()`` (a string) into the cookie on
+    login_user(...), then calls this loader on each request to turn it
+    back into a User instance. Returning None signals "no such user" and
+    Flask-Login treats the request as anonymous.
+    """
+    return db.session.get(User, int(user_id))
