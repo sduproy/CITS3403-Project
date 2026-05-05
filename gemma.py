@@ -11,21 +11,30 @@ API key, network, malformed response, refusal, etc.). The route
 layer flashes ``GemmaError.user_message`` and bounces the user back
 to the homepage.
 
-The structured output is enforced by passing the Pydantic schema as
-``response_schema`` to the Gemma call — Gemma is then forced to return
-JSON matching the schema, which we round-trip through
-``ItineraryPlan.model_validate_json``. JSON serialisation for
-persistence happens in routes.py via ``plan.model_dump_json()``; the
-``Itinerary.content`` column stores the result.
+Why we don't use response_schema: AI Studio's structured-output mode
+(``response_mime_type="application/json"`` + ``response_schema=...``)
+is a Gemini-only feature — Gemma rejects it with
+``JSON mode is not enabled for models/gemma-3-27b-it``. So we go the
+JSON-in-prompt route instead: the prompt includes the JSON schema
+inline, asks for "ONLY the JSON object", and the response is then
+stripped of Gemma's habitual ```json ... ``` markdown fences before
+being handed to ``ItineraryPlan.model_validate_json``. This is less
+deterministic than response_schema but it's the only path that works
+for Gemma today.
+
+JSON serialisation for persistence happens in routes.py via
+``plan.model_dump_json()``; the ``Itinerary.content`` column stores
+the result.
 """
 
 from __future__ import annotations
 
+import json
+import re
 from datetime import datetime
 
 from flask import current_app
 from google import genai
-from google.genai import types
 from google.genai.errors import APIError
 from pydantic import BaseModel, Field, ValidationError
 
@@ -81,10 +90,35 @@ _MODEL_NAME = "gemma-3-27b-it"
 noticeably worse structured output for multi-day plans."""
 
 
+_JSON_SCHEMA_HINT = """\
+{
+  "destination": "<destination name>",
+  "summary": "<1-2 sentence overview of the trip's theme>",
+  "days": [
+    {
+      "day_number": <1, 2, ...>,
+      "date": "<YYYY-MM-DD>",
+      "title": "<brief title for the day, e.g. 'Arrival & Shibuya'>",
+      "activities": [
+        {
+          "time": "<HH:MM 24-hour>",
+          "title": "<short activity name>",
+          "description": "<one or two sentences>",
+          "location": "<specific neighbourhood or venue>",
+          "duration_minutes": <integer>
+        }
+      ]
+    }
+  ]
+}"""
+
+
 def _build_prompt(destination: str, arrive_time: datetime, leave_time: datetime) -> str:
-    """The prompt we hand to Gemma. The schema is enforced separately by
-    response_schema; this prose just describes the task and the rules
-    we want the model to respect."""
+    """Prompt that asks Gemma for a JSON itinerary. The schema is
+    embedded inline because Gemma doesn't honour response_schema; the
+    response will still need code-fence stripping (see _extract_json)
+    because Gemma reliably wraps its JSON output in ```json ... ```.
+    """
     arrive_iso = arrive_time.strftime("%Y-%m-%d %H:%M")
     leave_iso = leave_time.strftime("%Y-%m-%d %H:%M")
     return (
@@ -109,7 +143,33 @@ def _build_prompt(destination: str, arrive_time: datetime, leave_time: datetime)
         "or venue names within the destination, not vague things like 'downtown'.\n"
         "7. day_number starts at 1 and increases by 1 per day.\n"
         "8. date is the ISO date for that day (YYYY-MM-DD).\n"
+        "\n"
+        "Respond with ONLY a single JSON object matching this exact shape "
+        "(replace placeholders, keep all field names):\n"
+        f"{_JSON_SCHEMA_HINT}\n"
     )
+
+
+_CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*\n?(.*?)\n?```\s*$", re.DOTALL)
+
+
+def _extract_json(raw: str) -> str:
+    """Strip the markdown code fences Gemma always adds around JSON.
+
+    Falls back to a substring-from-first-{-to-last-} extraction if the
+    fence pattern doesn't match, in case Gemma decides to add prose
+    around the JSON on a particular run.
+    """
+    raw = raw.strip()
+    fenced = _CODE_FENCE_RE.match(raw)
+    if fenced:
+        return fenced.group(1).strip()
+    # Fallback: locate the outermost JSON object braces.
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        return raw[start : end + 1]
+    return raw
 
 
 # ── Public entry point ──────────────────────────────────────────────────
@@ -136,13 +196,11 @@ def generate_itinerary(
 
     try:
         client = genai.Client(api_key=api_key)
+        # No response_schema / response_mime_type — Gemma rejects those.
+        # The schema lives inside the prompt and we parse the response.
         response = client.models.generate_content(
             model=_MODEL_NAME,
             contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=ItineraryPlan,
-            ),
         )
     except APIError as e:
         # Network failure, rate limit, invalid key, model refusal, etc.
@@ -160,11 +218,13 @@ def generate_itinerary(
             "The AI returned an empty itinerary. Try rephrasing your destination or dates."
         )
 
+    json_text = _extract_json(raw_text)
     try:
-        return ItineraryPlan.model_validate_json(raw_text)
-    except ValidationError as e:
-        # Gemma normally honours response_schema, but it can drift on edge
-        # cases (e.g. very short trips). Treat as a transient error.
+        return ItineraryPlan.model_validate_json(json_text)
+    except (ValidationError, json.JSONDecodeError) as e:
+        # Gemma occasionally drifts on the schema (extra fields, missing
+        # fields, wrong types) or returns truncated JSON. Treat as a
+        # transient error — the user can retry.
         raise GemmaError(
             "The AI returned an itinerary in an unexpected format. Please try again."
         ) from e
