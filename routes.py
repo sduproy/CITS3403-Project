@@ -33,7 +33,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from extensions import db
-from forms import RegisterForm
+from forms import LoginForm, RegisterForm
 from models import Itinerary, User
 
 main = Blueprint("main", __name__)
@@ -99,23 +99,18 @@ def register():
 
 @main.route("/login", methods=("GET", "POST"))
 def login():
-    if request.method == "POST":
-        identifier = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
-
-        if not identifier or not password:
-            flash("Please enter your username/email and password.", "error")
-            return render_template("login.html")
-
+    form = LoginForm()
+    if form.validate_on_submit():
+        identifier = form.username.data.strip()
         user = User.query.filter(
             (User.username == identifier) | (User.email == identifier.lower())
         ).first()
 
-        if user is None or not check_password_hash(user.password_hash, password):
+        if user is None or not check_password_hash(user.password_hash, form.password.data):
             flash("Invalid username or password.", "error")
-            return render_template("login.html")
+            return render_template("login.html", form=form)
 
-        login_user(user)
+        login_user(user, remember=form.remember_me.data)
         flash(f"Welcome back, {user.username}!", "success")
 
         # Honor ?next=<path>, but only relative paths (guard against open redirects).
@@ -126,8 +121,16 @@ def login():
         if user.role == "admin":
             return redirect(url_for("main.admin_dashboard"))
         return redirect(url_for("main.dashboard"))
+    elif form.is_submitted():
+        # POST that failed validation (CSRF or required field). Surface
+        # the first error per field as a flash so base.html's alerts
+        # keep rendering them.
+        for field_errors in form.errors.values():
+            for msg in field_errors:
+                flash(msg, "error")
+                break
 
-    return render_template("login.html")
+    return render_template("login.html", form=form)
 
 
 @main.route("/logout")
