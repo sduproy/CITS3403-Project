@@ -2,195 +2,128 @@
 {% block title %}Trip Detail · SmartVoyage{% endblock %}
 {% block content %}
 
-<h1>
-    Tokyo to Kyoto
-</h1>
+<div class="container" style="max-width:900px;">
 
-<div class = "mt-2 d-flex gap-2 flex-wrap">
-    <button id="btnprev" class="btn-tp-secondary" style = "display:none">Previous Day</button>
-    <button id="btnnext" class="btn-tp-secondary">Next Day</button>
-</div>
+  <h1 class="mt-4">{{ itinerary.destination }}</h1>
+  <p class="tp-text-muted">
+    {{ itinerary.arrive_time.strftime('%a %d %b %Y, %H:%M') }}
+    &nbsp;&rarr;&nbsp;
+    {{ itinerary.leave_time.strftime('%a %d %b %Y, %H:%M') }}
+  </p>
 
+  {% if plan %}
+    {% if plan.summary %}
+      <p class="tp-text-muted mb-4">{{ plan.summary }}</p>
+    {% endif %}
 
-<div class = "tp-itinerary-day" id = "Day 1">
-    <div class = "tp-day-label">
-        Day 1 - Tokyo
-    </div>
-
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            9:00AM
-        </div>
-        <div class="tp-time-content" data-title="Breakfast at Kurokatsusan" data-info="Famous Japanese breakfast spot in central Tokyo." style="cursor:pointer">
-            Breakfast at Kurokatsusan
-        </div>
-    </div>
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            11:00AM
-        </div>
-        <div class="tp-time-content" data-title="Sushi making class at NOBU" data-info="World class sushi making course with provided lunch." style="cursor:pointer">
-            Sushi making class at NOBU
-        </div>
-    </div>
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            3:00PM
-        </div>
-        <div class="tp-time-content" data-title="City Bus Tour" data-info="See the famous spots with a specialised tour bus and tour guide" style="cursor:pointer">
-            City bus tour
-        </div>
-    </div>
-</div>
-
-
-<div class = "tp-itinerary-day" id = "Day 2">
-    <div class = "tp-day-label">
-        Day 2 - Tokyo/Kyoto
+    <div class="mt-2 d-flex gap-2 flex-wrap mb-3">
+      <button id="btnprev" class="btn-tp-secondary" style="display:none">Previous Day</button>
+      <button id="btnnext" class="btn-tp-secondary"
+              {% if plan.days|length <= 1 %}style="display:none"{% endif %}>Next Day</button>
     </div>
 
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            9:00AM
+    {% for day in plan.days %}
+      <div class="tp-itinerary-day" id="day-{{ day.day_number }}">
+        <div class="tp-day-label">
+          Day {{ day.day_number }} &mdash; {{ day.title }}
+          <span class="tp-text-muted" style="font-weight:400; font-size:0.85rem;">
+            ({{ day.date }})
+          </span>
         </div>
-        <div class="tp-time-content" data-title="Hotel Checkout" data-info="Enjoy your last night at the hotel and check out in the morning." style="cursor:pointer">
-            Hotel checkout
-        </div>
-    </div>
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            11:00AM
-        </div>
-        <div class="tp-time-content" data-title="Flight to Kokyo" data-info="Flight from Tokyo airport, make sure not to miss it!" style="cursor:pointer">
-            Flight to Kyoto
-        </div>
-    </div>
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            3:00PM
-        </div>
-        <div class="tp-time-content" data-title="Hotel Checkin" data-info="Check into your new hotel for the next 5 nights." style="cursor:pointer">
-            Hotel Checkin
-        </div>
-    </div>
 
-
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            7:00PM
-        </div>
-        <div class="tp-time-content" data-title="Gion Disctrict Night Market" data-info="Explore the famous night life at Gion Disctrict Night Market." style="cursor:pointer">
-            Gion District night market
-        </div>
-    </div>
-</div>
-<div class = "tp-itinerary-day" id = "Day 3">
-    <div class = "tp-day-label">
-        Day 3 - Kyoto
-    </div>
-
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            9:00AM
-        </div>
-        <div class="tp-time-content" data-title="Breakfast" data-info="Eat some food" style="cursor:pointer">
-            Breakfast at somewhere in kyoto
-        </div>
-    </div>
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            11:00AM
-        </div>
-        <div class="tp-time-content" data-title="Sleep" data-info="Get some rest" style="cursor:pointer">
-            SSleep
-        </div>
-    </div>
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            3:00PM
-        </div>
-        <div class="tp-time-content" data-title="More Sleep" data-info="Get some more rest" style="cursor:pointer">
-            More sleep
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="activityModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalTitle"></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        {% for activity in day.activities %}
+          <div class="tp-time-block">
+            <div class="tp-time-label">{{ activity.time }}</div>
+            <div class="tp-time-content"
+                 data-title="{{ activity.title }}"
+                 data-info="{{ activity.description }} · {{ activity.location }} · ~{{ activity.duration_minutes }} min"
+                 data-location="{{ activity.location }}"
+                 style="cursor:pointer">
+              {{ activity.title }}
+              <span class="tp-text-muted" style="font-size:0.85rem; margin-left:0.5rem;">
+                @ {{ activity.location }}
+              </span>
+            </div>
+          </div>
+        {% endfor %}
       </div>
-      <div class="modal-body" id="modalBody">
-        <p id="modalInfo"></p>
-        <a id="modalMapLink" href="#" target="_blank" class="btn-tp-secondary">View on Google Maps</a>
+    {% endfor %}
+
+    {# Modal for clicked activities — same shape as before #}
+    <div class="modal fade" id="activityModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle"></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p id="modalInfo"></p>
+            <a id="modalMapLink" href="#" target="_blank" class="btn-tp-secondary">View on Google Maps</a>
+          </div>
+        </div>
+      </div>
     </div>
+
+  {% else %}
+    {# No plan yet — pre-AI rows or a parse failure. Shouldn't happen on
+       new itineraries, but guard against it so the page doesn't blow up. #}
+    <div class="tp-empty mt-4">
+      <div class="tp-empty-icon"><i class="bi bi-magic"></i></div>
+      <h5>This itinerary hasn't been generated yet</h5>
+      <p>Try planning a new trip from the homepage.</p>
+      <a href="{{ url_for('main.index') }}" class="btn btn-tp-primary">Plan a Trip</a>
     </div>
-  </div>
+  {% endif %}
+
 </div>
 
+{% if plan %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-            const days = document.querySelectorAll('.tp-itinerary-day')
-            let counter = 0
-            days.forEach(function(day){
-                if (counter==0){
-                    counter+=1
-                    return
-                }
-                else{
-                    day.style.display='none'
-                }
-            })
-        
+  document.addEventListener('DOMContentLoaded', function() {
+    const days = document.querySelectorAll('.tp-itinerary-day');
+    if (!days.length) return;
 
+    // Show day 1; hide the rest.
+    days.forEach(function(day, idx) {
+      day.style.display = idx === 0 ? '' : 'none';
+    });
 
-        let scroll = 0
-        btnprev.addEventListener('click',function(){
-            days[scroll].style.display = 'none'
-            days[scroll-1].style.display = ''
-            scroll -= 1
-            if (scroll == 0){
-                btnprev.style.display = 'none'
-            }
+    const btnprev = document.getElementById('btnprev');
+    const btnnext = document.getElementById('btnnext');
+    let scroll = 0;
 
-            else{
-                btnnext.style.display = ''
-            }
-        })
+    btnprev.addEventListener('click', function() {
+      days[scroll].style.display = 'none';
+      days[scroll - 1].style.display = '';
+      scroll -= 1;
+      if (scroll === 0) btnprev.style.display = 'none';
+      btnnext.style.display = '';
+    });
 
-        btnnext.addEventListener('click',function(){
-            days[scroll].style.display = 'none'
-            days[scroll+1].style.display = ''
-            scroll += 1
-            if (scroll == (days.length-1)){
-                btnnext.style.display = 'none'
-            }
+    btnnext.addEventListener('click', function() {
+      days[scroll].style.display = 'none';
+      days[scroll + 1].style.display = '';
+      scroll += 1;
+      if (scroll === days.length - 1) btnnext.style.display = 'none';
+      btnprev.style.display = '';
+    });
 
-            else{
-                btnprev.style.display = ''
-            }
-        })
-
-
-        const activities = document.querySelectorAll('.tp-time-content')
-        activities.forEach(function(activity){
-            activity.addEventListener('click', function() {
-            document.getElementById('modalTitle').innerText = activity.dataset.title
-            document.getElementById('modalInfo').innerText = activity.dataset.info
-            document.getElementById('modalMapLink').href = `https://www.google.com/maps/search/${encodeURIComponent(activity.dataset.title)}`
-            const modalElement = document.getElementById('activityModal')
-            const modalInstance = new bootstrap.Modal(modalElement)
-            modalInstance.show()
-        })
-        })
-
-})
+    // Click an activity -> show its description + a Google Maps link
+    // built from the activity location (more accurate than searching
+    // by title).
+    document.querySelectorAll('.tp-time-content').forEach(function(activity) {
+      activity.addEventListener('click', function() {
+        document.getElementById('modalTitle').innerText = activity.dataset.title;
+        document.getElementById('modalInfo').innerText = activity.dataset.info;
+        const q = encodeURIComponent(activity.dataset.location || activity.dataset.title);
+        document.getElementById('modalMapLink').href = 'https://www.google.com/maps/search/' + q;
+        const modalElement = document.getElementById('activityModal');
+        new bootstrap.Modal(modalElement).show();
+      });
+    });
+  });
 </script>
-
-
-</div>
-
+{% endif %}
 
 {% endblock %}

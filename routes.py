@@ -14,6 +14,7 @@ gate also enforces a CSRF token before the handler runs.
 """
 
 import functools
+import json
 
 from flask import (
     Blueprint,
@@ -174,7 +175,18 @@ def trip_details(id):
     # whether the itinerary exists at all, which doesn't leak the ID space.
     if itinerary is None or itinerary.user_id != current_user.id:
         abort(404)
-    return render_template("trip_details.html", itinerary=itinerary)
+
+    # Parse the JSON blob produced by gemma.py back into a dict for the
+    # template. Older rows (pre-AI) may have empty content — render with
+    # plan=None and let the template fall back to a "not yet generated"
+    # state.
+    plan = None
+    if itinerary.content:
+        try:
+            plan = json.loads(itinerary.content)
+        except json.JSONDecodeError:
+            plan = None
+    return render_template("trip_details.html", itinerary=itinerary, plan=plan)
 
 
 @main.route("/itinerary/new", methods=["POST"])
