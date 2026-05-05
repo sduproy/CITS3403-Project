@@ -9,19 +9,20 @@
       <div class="tp-auth-card">
         <h2>Create Account</h2>
         <form method="POST" action="{{ url_for('main.register') }}" novalidate>
+          {{ form.hidden_tag() }}
           <div class="mb-3">
             <label for="username" class="form-label" style="font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--tp-gray-500);">Username</label>
             <input type="text" id="username" name="username"
                    class="form-control tp-input" required minlength="3" maxlength="30"
                    placeholder="Pick a username"
-                   value="{{ request.form.username or '' }}">
+                   value="{{ form.username.data or '' }}">
           </div>
           <div class="mb-3">
             <label for="email" class="form-label" style="font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--tp-gray-500);">Email</label>
             <input type="email" id="email" name="email"
                    class="form-control tp-input" required
                    placeholder="you@example.com"
-                   value="{{ request.form.email or '' }}">
+                   value="{{ form.email.data or '' }}">
           </div>
           <div class="mb-3">
             <label for="password" class="form-label" style="font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--tp-gray-500);">Password</label>
@@ -31,7 +32,7 @@
           </div>
           <button type="submit" class="btn btn-tp-coral w-100 mb-3">Register</button>
           <p class="text-center mb-0" style="font-size:0.9rem;">
-            Already have an account? <a href="#">Log in</a>
+            Already have an account? <a href="{{ url_for('main.login') }}">Log in</a>
           </p>
         </form>
       </div>

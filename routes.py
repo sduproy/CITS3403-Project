@@ -33,6 +33,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from extensions import db
+from forms import RegisterForm
 from models import Itinerary, User
 
 main = Blueprint("main", __name__)
@@ -66,41 +67,34 @@ def community():
 
 @main.route("/register", methods=("GET", "POST"))
 def register():
-    if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-
-        error = None
-        if not username or len(username) < 3 or len(username) > 30:
-            error = "Username must be between 3 and 30 characters."
-        elif not username.replace("_", "").isalnum():
-            error = "Username may only contain letters, numbers, and underscores."
-        elif not email or "@" not in email:
-            error = "A valid email is required."
-        elif len(password) < 6:
-            error = "Password must be at least 6 characters."
-
-        if error is None:
-            try:
-                db.session.add(
-                    User(
-                        username=username,
-                        email=email,
-                        password_hash=generate_password_hash(password),
-                    )
+    form = RegisterForm()
+    if form.validate_on_submit():
+        try:
+            db.session.add(
+                User(
+                    username=form.username.data,
+                    email=form.email.data.lower(),
+                    password_hash=generate_password_hash(form.password.data),
                 )
-                db.session.commit()
-            except IntegrityError:
-                db.session.rollback()
-                error = "That username or email is already registered."
-            else:
-                flash("Account created — please log in.", "success")
-                return redirect(url_for("main.login"))
+            )
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash("That username or email is already registered.", "error")
+        else:
+            flash("Account created — please log in.", "success")
+            return redirect(url_for("main.login"))
+    elif form.is_submitted():
+        # form.is_submitted() is True for any POST; we get here only if
+        # validation failed (CSRF, required, length, regexp, email format).
+        # Surface the first error per field as flash messages so the
+        # existing alert styling at the top of base.html keeps working.
+        for field_errors in form.errors.values():
+            for msg in field_errors:
+                flash(msg, "error")
+                break  # one error per field is enough to point the user at the issue
 
-        flash(error, "error")
-
-    return render_template("register.html")
+    return render_template("register.html", form=form)
 
 
 @main.route("/login", methods=("GET", "POST"))
