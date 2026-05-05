@@ -32,7 +32,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from extensions import db
-from forms import LoginForm, NewItineraryForm, RegisterForm
+from forms import DeleteItineraryForm, LoginForm, NewItineraryForm, RegisterForm
 from models import Itinerary, User
 
 main = Blueprint("main", __name__)
@@ -150,7 +150,13 @@ def dashboard():
         .order_by(Itinerary.created_at.desc())
         .all()
     )
-    return render_template("dashboard.html", itineraries=itineraries)
+    # One DeleteItineraryForm shared across the loop in dashboard.html so
+    # every delete button gets a CSRF token via {{ delete_form.hidden_tag() }}.
+    return render_template(
+        "dashboard.html",
+        itineraries=itineraries,
+        delete_form=DeleteItineraryForm(),
+    )
 
 
 @main.route("/admin")
@@ -199,6 +205,12 @@ def new_itinerary():
 @main.route("/itinerary/<int:id>/delete", methods=["POST"])
 @login_required
 def delete_itinerary(id):
+    form = DeleteItineraryForm()
+    if not form.validate_on_submit():
+        # CSRF token missing or wrong — refuse the delete.
+        flash("The CSRF token is missing.", "error")
+        return redirect(url_for("main.dashboard"))
+
     itinerary = Itinerary.query.filter_by(id=id, user_id=current_user.id).first()
     if itinerary is not None:
         db.session.delete(itinerary)
