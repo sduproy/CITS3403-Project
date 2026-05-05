@@ -92,7 +92,7 @@ def register():
                 conn.execute(
                     "INSERT INTO users (username, email, password_hash)"
                     " VALUES (?, ?, ?)",
-                    (username, email, generate_password_hash(password)),
+                    (username, email, generate_password_hash(password, method="pbkdf2:sha256")),
                 )
                 conn.commit()
             except sqlite3.IntegrityError:

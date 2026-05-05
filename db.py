@@ -37,7 +37,7 @@ def init_db():
             (
                 "admin",
                 "admin@smartvoyage.local",
-                generate_password_hash("admin"),
+                generate_password_hash("admin", method="pbkdf2:sha256"),
                 "admin",
             ),
         )
