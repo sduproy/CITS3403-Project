@@ -15,6 +15,7 @@ gate also enforces a CSRF token before the handler runs.
 
 import functools
 import json
+from datetime import datetime
 
 from flask import (
     Blueprint,
@@ -194,13 +195,14 @@ def trip_details(id):
 def new_itinerary():
     form = NewItineraryForm()
     if form.validate_on_submit():
-        # WTForms' DateTimeLocalField has already parsed the
-        # "YYYY-MM-DDTHH:MM" strings into datetime instances. The
-        # cross-field "leave > arrive" rule is enforced by
-        # NewItineraryForm.validate_leave_time.
+        # The form has 4 fields (date + time-of-day for both arrive and
+        # leave) so the native HTML5 controls auto-close and fit in one
+        # row. Combine each pair into a full datetime here. The
+        # cross-field "leave > arrive" rule is enforced as a datetime
+        # comparison in NewItineraryForm.validate_leave_at.
         destination = form.destination.data.strip()
-        arrive_time = form.arrive_time.data
-        leave_time = form.leave_time.data
+        arrive_time = datetime.combine(form.arrive_date.data, form.arrive_at.data)
+        leave_time = datetime.combine(form.leave_date.data, form.leave_at.data)
 
         # Hand off to Gemma. Network call ~5-15s; user sees the redirect
         # only once the JSON is back and validated. Any failure

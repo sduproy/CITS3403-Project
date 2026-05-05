@@ -27,12 +27,15 @@ pattern applies uniformly.
 """
 
 from flask_wtf import FlaskForm
+from datetime import datetime
+
 from wtforms import (
     BooleanField,
-    DateTimeLocalField,
+    DateField,
     PasswordField,
     StringField,
     SubmitField,
+    TimeField,
 )
 from wtforms.validators import (
     DataRequired,
@@ -92,33 +95,52 @@ class LoginForm(FlaskForm):
 class NewItineraryForm(FlaskForm):
     """Trip-planner form posted to /itinerary/new from the homepage.
 
-    arrive_time / leave_time are local datetimes (not just dates) so the AI
-    knows when on day 1 the traveller actually lands and how late on the
-    last day they need to be on the way to the airport. The HTML5
-    ``<input type="datetime-local">`` produces strings like "2026-06-01T16:00"
-    that DateTimeLocalField parses for us.
+    Why four fields instead of two ``<input type="datetime-local">``:
+    - The native datetime-local picker on Chrome / Edge doesn't auto-close
+      after picking a time — the user has to click outside or hit OK.
+      ``<input type="date">`` does auto-close on date selection, and
+      ``<input type="time">`` is small enough to fit four controls in one
+      row without truncating the time portion.
+    - ``arrive_at`` / ``leave_at`` are intentionally NOT named ``..._time``
+      to avoid colliding with the DB column ``Itinerary.arrive_time``
+      (which is a full datetime); the route combines date + time of day
+      into the datetime stored in the model.
     """
 
     destination = StringField(
         "Destination",
         validators=[DataRequired(message="Please enter a destination.")],
     )
-    arrive_time = DateTimeLocalField(
-        "Arrive time",
-        format="%Y-%m-%dT%H:%M",
-        validators=[DataRequired(message="Please pick when you arrive at the destination.")],
+    arrive_date = DateField(
+        "Arrive date",
+        validators=[DataRequired(message="Please pick the date you arrive.")],
     )
-    leave_time = DateTimeLocalField(
+    arrive_at = TimeField(
+        "Arrive time",
+        validators=[DataRequired(message="Please pick the time you arrive.")],
+    )
+    leave_date = DateField(
+        "Leave date",
+        validators=[DataRequired(message="Please pick the date you leave.")],
+    )
+    leave_at = TimeField(
         "Leave time",
-        format="%Y-%m-%dT%H:%M",
-        validators=[DataRequired(message="Please pick when you leave the destination.")],
+        validators=[DataRequired(message="Please pick the time you leave.")],
     )
     submit = SubmitField("Plan trip")
 
-    def validate_leave_time(self, field):
-        """Cross-field check: leave must be after arrive."""
-        if self.arrive_time.data and field.data and field.data <= self.arrive_time.data:
-            raise ValidationError("Leave time must be after arrive time.")
+    def validate_leave_at(self, field):
+        """Cross-field check: leave must be after arrive (compared as full
+        datetimes, not just times — leaving at 09:00 the next day is fine
+        even though the time-of-day is earlier than arrival)."""
+        if not (self.arrive_date.data and self.arrive_at.data and self.leave_date.data and field.data):
+            # Some other field failed DataRequired; skip — that error will
+            # already be flashed.
+            return
+        arrive_dt = datetime.combine(self.arrive_date.data, self.arrive_at.data)
+        leave_dt = datetime.combine(self.leave_date.data, field.data)
+        if leave_dt <= arrive_dt:
+            raise ValidationError("Leave date/time must be after arrive date/time.")
 
 
 class DeleteItineraryForm(FlaskForm):

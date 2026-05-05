@@ -20,19 +20,27 @@
     <form action="{{ url_for('main.new_itinerary') }}" method="POST">
       {{ form.hidden_tag() }}
       <div class="row g-3">
-        <div class="col-md-4">
+        <div class="col-md-12">
           <label for="destination">Destination</label>
           <input type="text" id="destination" name="destination" class="form-control tp-input" placeholder="e.g. Tokyo, Japan" required>
         </div>
-        <div class="col-md-3">
-          <label for="arrive-time">Arrive Time</label>
-          <input type="datetime-local" id="arrive-time" name="arrive_time" class="form-control tp-input" required>
+        <div class="col-md-3 col-6">
+          <label for="arrive-date">Arrive Date</label>
+          <input type="date" id="arrive-date" name="arrive_date" class="form-control tp-input" required>
         </div>
-        <div class="col-md-3">
-          <label for="leave-time">Leave Time</label>
-          <input type="datetime-local" id="leave-time" name="leave_time" class="form-control tp-input" required>
+        <div class="col-md-2 col-6">
+          <label for="arrive-at">Arrive Time</label>
+          <input type="time" id="arrive-at" name="arrive_at" class="form-control tp-input" required>
         </div>
-        <div class="col-md-2 d-flex align-items-end">
+        <div class="col-md-3 col-6">
+          <label for="leave-date">Leave Date</label>
+          <input type="date" id="leave-date" name="leave_date" class="form-control tp-input" required>
+        </div>
+        <div class="col-md-2 col-6">
+          <label for="leave-at">Leave Time</label>
+          <input type="time" id="leave-at" name="leave_at" class="form-control tp-input" required>
+        </div>
+        <div class="col-md-2 col-12 d-flex align-items-end">
           <button type="submit" class="btn btn-tp-primary w-100"><i class="bi bi-magic"></i> Plan</button>
         </div>
       </div>
