@@ -18,7 +18,6 @@ session["user_id"] / g.user mechanism. Highlights:
 """
 
 import functools
-from datetime import date
 
 from flask import (
     Blueprint,
@@ -33,7 +32,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from extensions import db
-from forms import LoginForm, RegisterForm
+from forms import LoginForm, NewItineraryForm, RegisterForm
 from models import Itinerary, User
 
 main = Blueprint("main", __name__)
@@ -57,7 +56,10 @@ def admin_required(view):
 
 @main.route("/")
 def index():
-    return render_template("itinerary.html")
+    # The trip-planner form on the homepage POSTs to /itinerary/new; pass
+    # a NewItineraryForm here so {{ form.hidden_tag() }} can render the
+    # CSRF token bound to the user's session cookie.
+    return render_template("itinerary.html", form=NewItineraryForm())
 
 
 @main.route("/community")
@@ -167,34 +169,31 @@ def trip_details(id):
 @main.route("/itinerary/new", methods=["POST"])
 @login_required
 def new_itinerary():
-    destination = request.form.get("destination", "").strip()
-    start_date = request.form.get("start_date", "").strip()
-    end_date = request.form.get("end_date", "").strip()
+    form = NewItineraryForm()
+    if form.validate_on_submit():
+        # WTForms' DateField has already parsed start_date / end_date into
+        # datetime.date instances at this point — no manual fromisoformat
+        # needed. The cross-field "end >= start" rule is enforced by
+        # NewItineraryForm.validate_end_date.
+        itinerary = Itinerary(
+            user_id=current_user.id,
+            destination=form.destination.data.strip(),
+            start_date=form.start_date.data,
+            end_date=form.end_date.data,
+            content="",
+        )
+        db.session.add(itinerary)
+        db.session.commit()
+        return redirect(url_for("main.trip_details", id=itinerary.id))
 
-    error = None
-    if not destination:
-        error = "Please enter a destination."
-    elif not start_date or not end_date:
-        error = "Please select start and end dates."
-    elif end_date < start_date:
-        error = "End date must be after start date."
-
-    if error:
-        flash(error, "error")
-        return redirect(url_for("main.index"))
-
-    # Convert ISO date strings (YYYY-MM-DD from <input type="date">) to date
-    # objects so SQLAlchemy's Date column accepts them.
-    itinerary = Itinerary(
-        user_id=current_user.id,
-        destination=destination,
-        start_date=date.fromisoformat(start_date),
-        end_date=date.fromisoformat(end_date),
-        content="",
-    )
-    db.session.add(itinerary)
-    db.session.commit()
-    return redirect(url_for("main.trip_details", id=itinerary.id))
+    # Validation failed (CSRF, required, or end_date < start_date). Surface
+    # the first error per field as a flash and bounce back to the homepage
+    # where the form lives.
+    for field_errors in form.errors.values():
+        for msg in field_errors:
+            flash(msg, "error")
+            break
+    return redirect(url_for("main.index"))
 
 
 @main.route("/itinerary/<int:id>/delete", methods=["POST"])

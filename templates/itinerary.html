@@ -18,6 +18,7 @@
 <div class="container" id="trip-form">
   <div class="tp-trip-form">
     <form action="{{ url_for('main.new_itinerary') }}" method="POST">
+      {{ form.hidden_tag() }}
       <div class="row g-3">
         <div class="col-md-5">
           <label for="destination">Destination</label>
