@@ -1,20 +1,17 @@
 """
-SQLAlchemy ORM models.
+SQLAlchemy ORM models — the source of truth for the database schema.
 
-These mirror the tables defined in ``schema.sql`` exactly, so existing
-``instance/travelplan.sqlite`` databases keep working without any
-migration. The only difference is that queries now go through the ORM
-(``User.query.filter_by(...)``) instead of raw sqlite3 cursors, which
-the Flask security lecture flags as the recommended pattern for
-avoiding SQL-injection-style attacks.
+``flask init-db`` and ``bootstrap_db()`` (in db.py) build the SQLite
+schema from these classes via ``db.create_all()``. Routes query them
+through the ORM (``User.query.filter_by(...)``), which auto-escapes
+parameters and so avoids the SQL-injection-style attacks the Flask
+security lecture flags.
 
-Phase B (Flask-Login):
-- ``User`` inherits from ``UserMixin``, which provides the four
-  properties Flask-Login expects on a user model: ``is_authenticated``,
-  ``is_active``, ``is_anonymous``, and ``get_id()``.
-- ``load_user`` is registered as the ``@login.user_loader`` callback,
-  so Flask-Login can rehydrate the current user from the session
-  cookie on every request.
+The ``User`` class also inherits from ``UserMixin`` so Flask-Login can
+use it directly: it gets ``is_authenticated``, ``is_active``,
+``is_anonymous``, and ``get_id()`` for free, and the
+``@login.user_loader`` at the bottom of this file rehydrates a User
+instance from the ID stored in the session cookie on each request.
 """
 
 from datetime import datetime
@@ -43,7 +40,7 @@ class User(UserMixin, db.Model):
         CheckConstraint("role IN ('user', 'admin')", name="ck_users_role"),
     )
 
-    # Cascading children, matching ON DELETE CASCADE in schema.sql.
+    # Deleting a user cascades to their itineraries and reviews.
     itineraries = relationship(
         "Itinerary",
         back_populates="user",

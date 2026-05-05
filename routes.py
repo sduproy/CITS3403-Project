@@ -1,20 +1,16 @@
 """
 Application routes.
 
-Phase B of the security refactor: Flask-Login replaces the manual
-session["user_id"] / g.user mechanism. Highlights:
+Authentication is delegated to Flask-Login: ``current_user`` is the
+logged-in User (or AnonymousUserMixin), ``login_user`` / ``logout_user``
+manage the session cookie, and ``@login_required`` (imported from
+``flask_login``) gates protected endpoints and redirects anonymous
+requests to ``login.login_view`` with ``?next=<path>`` preserved.
 
-- ``@login_required`` is imported from ``flask_login`` (still preserves
-  ``?next=`` automatically — Flask-Login redirects anonymous users to
-  ``login.login_view`` with the original path appended).
-- ``current_user`` (a thread-local proxy from Flask-Login) replaces
-  ``g.user`` everywhere, including the templates that previously read
-  ``g.user.username`` / ``g.user.role``.
-- ``login_user(user)`` and ``logout_user()`` replace the manual
-  ``session["user_id"] = ...`` / ``session.clear()`` calls.
-- The ``admin_required`` decorator stays custom — Flask-Login doesn't
-  cover role-based authorisation, only authentication. It now reads
-  ``current_user`` instead of ``g.user``.
+``admin_required`` below is custom — Flask-Login covers authentication
+only, not role-based authorisation, so the role check is ours. Every
+POST endpoint uses a Flask-WTF form whose ``form.validate_on_submit()``
+gate also enforces a CSRF token before the handler runs.
 """
 
 import functools

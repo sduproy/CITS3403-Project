@@ -1,8 +1,7 @@
 """
 Database CLI helpers and startup bootstrap.
 
-The raw sqlite3 layer that lived here was replaced by SQLAlchemy in
-the security-lecture-driven refactor (Phase A). This module now holds:
+Two entry points:
 
   1. ``init_db()`` / ``flask init-db`` — DESTRUCTIVE: drops every table
      SQLAlchemy knows about, recreates them from the models, and
