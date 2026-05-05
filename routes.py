@@ -28,6 +28,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
+import gemma
 from extensions import db
 from forms import DeleteItineraryForm, LoginForm, NewItineraryForm, RegisterForm
 from models import Itinerary, User
@@ -185,12 +186,27 @@ def new_itinerary():
         # "YYYY-MM-DDTHH:MM" strings into datetime instances. The
         # cross-field "leave > arrive" rule is enforced by
         # NewItineraryForm.validate_leave_time.
+        destination = form.destination.data.strip()
+        arrive_time = form.arrive_time.data
+        leave_time = form.leave_time.data
+
+        # Hand off to Gemma. Network call ~5-15s; user sees the redirect
+        # only once the JSON is back and validated. Any failure
+        # (missing API key / network / malformed response) raises
+        # GemmaError, which we turn into a flash + bounce back to /.
+        try:
+            plan = gemma.generate_itinerary(destination, arrive_time, leave_time)
+        except gemma.GemmaError as e:
+            flash(e.user_message, "error")
+            return redirect(url_for("main.index"))
+
+        # Persist only on success — never save a half-baked itinerary.
         itinerary = Itinerary(
             user_id=current_user.id,
-            destination=form.destination.data.strip(),
-            arrive_time=form.arrive_time.data,
-            leave_time=form.leave_time.data,
-            content="",
+            destination=destination,
+            arrive_time=arrive_time,
+            leave_time=leave_time,
+            content=plan.model_dump_json(),
         )
         db.session.add(itinerary)
         db.session.commit()
