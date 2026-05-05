@@ -181,24 +181,24 @@ def trip_details(id):
 def new_itinerary():
     form = NewItineraryForm()
     if form.validate_on_submit():
-        # WTForms' DateField has already parsed start_date / end_date into
-        # datetime.date instances at this point — no manual fromisoformat
-        # needed. The cross-field "end >= start" rule is enforced by
-        # NewItineraryForm.validate_end_date.
+        # WTForms' DateTimeLocalField has already parsed the
+        # "YYYY-MM-DDTHH:MM" strings into datetime instances. The
+        # cross-field "leave > arrive" rule is enforced by
+        # NewItineraryForm.validate_leave_time.
         itinerary = Itinerary(
             user_id=current_user.id,
             destination=form.destination.data.strip(),
-            start_date=form.start_date.data,
-            end_date=form.end_date.data,
+            arrive_time=form.arrive_time.data,
+            leave_time=form.leave_time.data,
             content="",
         )
         db.session.add(itinerary)
         db.session.commit()
         return redirect(url_for("main.trip_details", id=itinerary.id))
 
-    # Validation failed (CSRF, required, or end_date < start_date). Surface
-    # the first error per field as a flash and bounce back to the homepage
-    # where the form lives.
+    # Validation failed (CSRF, required, or leave_time <= arrive_time).
+    # Surface the first error per field as a flash and bounce back to the
+    # homepage where the form lives.
     for field_errors in form.errors.values():
         for msg in field_errors:
             flash(msg, "error")

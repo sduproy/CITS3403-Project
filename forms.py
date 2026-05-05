@@ -29,7 +29,7 @@ pattern applies uniformly.
 from flask_wtf import FlaskForm
 from wtforms import (
     BooleanField,
-    DateField,
+    DateTimeLocalField,
     PasswordField,
     StringField,
     SubmitField,
@@ -90,26 +90,35 @@ class LoginForm(FlaskForm):
 
 
 class NewItineraryForm(FlaskForm):
-    """Trip-planner form posted to /itinerary/new from the homepage."""
+    """Trip-planner form posted to /itinerary/new from the homepage.
+
+    arrive_time / leave_time are local datetimes (not just dates) so the AI
+    knows when on day 1 the traveller actually lands and how late on the
+    last day they need to be on the way to the airport. The HTML5
+    ``<input type="datetime-local">`` produces strings like "2026-06-01T16:00"
+    that DateTimeLocalField parses for us.
+    """
 
     destination = StringField(
         "Destination",
         validators=[DataRequired(message="Please enter a destination.")],
     )
-    start_date = DateField(
-        "Start date",
-        validators=[DataRequired(message="Please select a start date.")],
+    arrive_time = DateTimeLocalField(
+        "Arrive time",
+        format="%Y-%m-%dT%H:%M",
+        validators=[DataRequired(message="Please pick when you arrive at the destination.")],
     )
-    end_date = DateField(
-        "End date",
-        validators=[DataRequired(message="Please select an end date.")],
+    leave_time = DateTimeLocalField(
+        "Leave time",
+        format="%Y-%m-%dT%H:%M",
+        validators=[DataRequired(message="Please pick when you leave the destination.")],
     )
     submit = SubmitField("Plan trip")
 
-    def validate_end_date(self, field):
-        """Cross-field check: end must not precede start."""
-        if self.start_date.data and field.data and field.data < self.start_date.data:
-            raise ValidationError("End date must be on or after the start date.")
+    def validate_leave_time(self, field):
+        """Cross-field check: leave must be after arrive."""
+        if self.arrive_time.data and field.data and field.data <= self.arrive_time.data:
+            raise ValidationError("Leave time must be after arrive time.")
 
 
 class DeleteItineraryForm(FlaskForm):

@@ -68,8 +68,13 @@ class Itinerary(db.Model):
         nullable=False,
     )
     destination = db.Column(db.Text, nullable=False)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
+    # Local datetimes — the moment the traveller arrives at and the moment
+    # they leave the destination. The AI uses the time-of-day to avoid
+    # planning activities before arrival or after departure.
+    arrive_time = db.Column(db.DateTime, nullable=False)
+    leave_time = db.Column(db.DateTime, nullable=False)
+    # Free-form text field; the AI feature stores a JSON-serialised
+    # day-by-day plan here (see gemma.py).
     content = db.Column(db.Text, nullable=False, default="")
     is_public = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

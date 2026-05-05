@@ -20,20 +20,20 @@
     <form action="{{ url_for('main.new_itinerary') }}" method="POST">
       {{ form.hidden_tag() }}
       <div class="row g-3">
-        <div class="col-md-5">
+        <div class="col-md-4">
           <label for="destination">Destination</label>
           <input type="text" id="destination" name="destination" class="form-control tp-input" placeholder="e.g. Tokyo, Japan" required>
         </div>
         <div class="col-md-3">
-          <label for="start-date">Start Date</label>
-          <input type="date" id="start-date" name="start_date" class="form-control tp-input" required>
+          <label for="arrive-time">Arrive Time</label>
+          <input type="datetime-local" id="arrive-time" name="arrive_time" class="form-control tp-input" required>
         </div>
         <div class="col-md-3">
-          <label for="end-date">End Date</label>
-          <input type="date" id="end-date" name="end_date" class="form-control tp-input" required>
+          <label for="leave-time">Leave Time</label>
+          <input type="datetime-local" id="leave-time" name="leave_time" class="form-control tp-input" required>
         </div>
-        <div class="col-md-1 d-flex align-items-end">
-          <button type="submit" class="btn btn-tp-primary w-100"><i class="bi bi-magic"></i></button>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-tp-primary w-100"><i class="bi bi-magic"></i> Plan</button>
         </div>
       </div>
     </form>
