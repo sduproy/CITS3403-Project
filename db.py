@@ -37,7 +37,6 @@ def _seed_default_admin():
     )
     db.session.commit()
 
-
 def init_db():
     """Destructive: drop every table, recreate the schema, seed admin."""
     db.drop_all()
@@ -60,7 +59,6 @@ def bootstrap_db():
     db.create_all()
     if User.query.count() == 0:
         _seed_default_admin()
-
 
 @click.command("init-db")
 def init_db_command():

@@ -122,6 +122,33 @@ class Review(db.Model):
         return f"<Review {self.id} itin={self.itinerary_id} user={self.user_id} rating={self.rating}>"
 
 
+class Day(db.Model):
+    __tablename__ = "days"
+
+    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
+    itinerary_id = db.Column(db.Integer, db.ForeignKey("itineraries.id"), nullable=False)
+    day_number = db.Column(db.Integer, nullable=False)
+
+    itinerary = db.relationship(
+        "Itinerary",
+        backref=db.backref("days", order_by="Day.day_number", cascade="all, delete-orphan"),
+    )
+
+class Activity(db.Model):
+    __tablename__ = "activities"
+
+    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
+    day_id = db.Column(db.Integer, db.ForeignKey("days.id"), nullable=False)
+    time = db.Column(db.String(20), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    info = db.Column(db.Text, default="")
+    order = db.Column(db.Integer, nullable=False, default=0)
+
+    day = db.relationship(
+        "Day",
+        backref=db.backref("activities", order_by="Activity.order", cascade="all, delete-orphan"),
+    )
+
 @login.user_loader
 def load_user(user_id):
     """Rehydrate the user model from the ID stored in the session cookie.
