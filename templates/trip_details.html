@@ -18,7 +18,7 @@
 {% for day in itinerary['days']%}
 <div class = "tp-itinerary-day" id = "{{day['label']}}">
     <div class = "tp-day-label">
-        {{day['label']}}
+        Day - {{day['day_number']}}
     </div>
 {% for activity in day['activities'] %}
     <div class = "tp-time-block">
