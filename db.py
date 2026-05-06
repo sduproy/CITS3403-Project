@@ -31,7 +31,7 @@ def _seed_default_admin():
         User(
             username="admin",
             email="admin@smartvoyage.local",
-            password_hash=generate_password_hash("admin"),
+            password_hash=generate_password_hash("admin", method="pbkdf2:sha256"),
             role="admin",
         )
     )
