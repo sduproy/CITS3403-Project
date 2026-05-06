@@ -73,7 +73,7 @@ def register():
                 User(
                     username=form.username.data,
                     email=form.email.data.lower(),
-                    password_hash=generate_password_hash(form.password.data),
+                    password_hash=generate_password_hash(form.password.data, method="pbkdf2:sha256"),
                 )
             )
             db.session.commit()
