@@ -84,7 +84,7 @@ class GemmaError(Exception):
 # ── Prompt ──────────────────────────────────────────────────────────────
 
 
-_MODEL_NAME = "gemma-4-31b-it"
+_MODEL_NAME = "gemma-4-26b-a4b-it"
 """Gemma 4 instruction-tuned model on Google AI Studio. Gemma 3 (27b
 and below) was throttled with tighter free-tier rate limits after
 Gemma 4 launched, so the bigger Gemma 4 variant is actually faster
