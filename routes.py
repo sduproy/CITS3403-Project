@@ -1,45 +1,49 @@
+"""
+Application routes.
+
+Authentication is delegated to Flask-Login: ``current_user`` is the
+logged-in User (or AnonymousUserMixin), ``login_user`` / ``logout_user``
+manage the session cookie, and ``@login_required`` (imported from
+``flask_login``) gates protected endpoints and redirects anonymous
+requests to ``login.login_view`` with ``?next=<path>`` preserved.
+
+``admin_required`` below is custom — Flask-Login covers authentication
+only, not role-based authorisation, so the role check is ours. Every
+POST endpoint uses a Flask-WTF form whose ``form.validate_on_submit()``
+gate also enforces a CSRF token before the handler runs.
+"""
+
 import functools
-import sqlite3
 
 from flask import (
     Blueprint,
+    abort,
     flash,
-    g,
     redirect,
     render_template,
     request,
-    session,
     url_for,
 )
+from flask_login import current_user, login_required, login_user, logout_user
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from db import get_db
+from extensions import db
+from forms import DeleteItineraryForm, LoginForm, NewItineraryForm, RegisterForm
+from models import Itinerary, User
 
 main = Blueprint("main", __name__)
 
 
-def login_required(view):
-    """Redirect anonymous users to the login page, preserving the target URL."""
-
-    @functools.wraps(view)
-    def wrapped_view(**kwargs):
-        if g.user is None:
-            flash("Please log in to access this page.", "error")
-            return redirect(url_for("main.login", next=request.path))
-        return view(**kwargs)
-
-    return wrapped_view
-
-
 def admin_required(view):
-    """Gate a view to users with role == 'admin'. Anon users get sent to login."""
+    """Gate a view to users with role == 'admin'. Anon users go to login."""
 
     @functools.wraps(view)
     def wrapped_view(**kwargs):
-        if g.user is None:
+        if not current_user.is_authenticated:
             flash("Please log in to access this page.", "error")
             return redirect(url_for("main.login", next=request.path))
-        if g.user["role"] != "admin":
+        if current_user.role != "admin":
             flash("Admin access required.", "error")
             return redirect(url_for("main.index"))
         return view(**kwargs)
@@ -47,21 +51,12 @@ def admin_required(view):
     return wrapped_view
 
 
-@main.before_app_request
-def load_logged_in_user():
-    user_id = session.get("user_id")
-    if user_id is None:
-        g.user = None
-    else:
-        g.user = get_db().execute(
-            "SELECT id, username, email, role FROM users WHERE id = ?",
-            (user_id,),
-        ).fetchone()
-
-
 @main.route("/")
 def index():
-    return render_template("itinerary.html")
+    # The trip-planner form on the homepage POSTs to /itinerary/new; pass
+    # a NewItineraryForm here so {{ form.hidden_tag() }} can render the
+    # CSRF token bound to the user's session cookie.
+    return render_template("itinerary.html", form=NewItineraryForm())
 
 
 @main.route("/community")
@@ -71,80 +66,75 @@ def community():
 
 @main.route("/register", methods=("GET", "POST"))
 def register():
-    if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-
-        error = None
-        if not username or len(username) < 3 or len(username) > 30:
-            error = "Username must be between 3 and 30 characters."
-        elif not username.replace("_", "").isalnum():
-            error = "Username may only contain letters, numbers, and underscores."
-        elif not email or "@" not in email:
-            error = "A valid email is required."
-        elif len(password) < 6:
-            error = "Password must be at least 6 characters."
-
-        if error is None:
-            conn = get_db()
-            try:
-                conn.execute(
-                    "INSERT INTO users (username, email, password_hash)"
-                    " VALUES (?, ?, ?)",
-                    (username, email, generate_password_hash(password)),
+    form = RegisterForm()
+    if form.validate_on_submit():
+        try:
+            db.session.add(
+                User(
+                    username=form.username.data,
+                    email=form.email.data.lower(),
+                    password_hash=generate_password_hash(form.password.data),
                 )
-                conn.commit()
-            except sqlite3.IntegrityError:
-                error = "That username or email is already registered."
-            else:
-                flash("Account created — please log in.", "success")
-                return redirect(url_for("main.login"))
+            )
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash("That username or email is already registered.", "error")
+        else:
+            flash("Account created — please log in.", "success")
+            return redirect(url_for("main.login"))
+    elif form.is_submitted():
+        # form.is_submitted() is True for any POST; we get here only if
+        # validation failed (CSRF, required, length, regexp, email format).
+        # Surface the first error per field as flash messages so the
+        # existing alert styling at the top of base.html keeps working.
+        for field_errors in form.errors.values():
+            for msg in field_errors:
+                flash(msg, "error")
+                break  # one error per field is enough to point the user at the issue
 
-        flash(error, "error")
-
-    return render_template("register.html")
+    return render_template("register.html", form=form)
 
 
 @main.route("/login", methods=("GET", "POST"))
 def login():
-    if request.method == "POST":
-        identifier = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
+    form = LoginForm()
+    if form.validate_on_submit():
+        identifier = form.username.data.strip()
+        user = User.query.filter(
+            (User.username == identifier) | (User.email == identifier.lower())
+        ).first()
 
-        if not identifier or not password:
-            flash("Please enter your username/email and password.", "error")
-            return render_template("login.html")
-
-        user = get_db().execute(
-            "SELECT id, username, password_hash, role FROM users"
-            " WHERE username = ? OR email = ?",
-            (identifier, identifier.lower()),
-        ).fetchone()
-
-        if user is None or not check_password_hash(user["password_hash"], password):
+        if user is None or not check_password_hash(user.password_hash, form.password.data):
             flash("Invalid username or password.", "error")
-            return render_template("login.html")
+            return render_template("login.html", form=form)
 
-        session.clear()
-        session["user_id"] = user["id"]
-        flash(f"Welcome back, {user['username']}!", "success")
+        login_user(user, remember=form.remember_me.data)
+        flash(f"Welcome back, {user.username}!", "success")
 
         # Honor ?next=<path>, but only relative paths (guard against open redirects).
         next_url = request.args.get("next", "")
         if next_url.startswith("/") and not next_url.startswith("//"):
             return redirect(next_url)
 
-        if user["role"] == "admin":
+        if user.role == "admin":
             return redirect(url_for("main.admin_dashboard"))
         return redirect(url_for("main.dashboard"))
+    elif form.is_submitted():
+        # POST that failed validation (CSRF or required field). Surface
+        # the first error per field as a flash so base.html's alerts
+        # keep rendering them.
+        for field_errors in form.errors.values():
+            for msg in field_errors:
+                flash(msg, "error")
+                break
 
-    return render_template("login.html")
+    return render_template("login.html", form=form)
 
 
 @main.route("/logout")
 def logout():
-    session.clear()
+    logout_user()
     flash("You have been logged out.", "success")
     return redirect(url_for("main.index"))
 
@@ -152,11 +142,18 @@ def logout():
 @main.route("/dashboard")
 @login_required
 def dashboard():
-    itineraries = get_db().execute(
-        "SELECT * FROM itineraries WHERE user_id = ? ORDER BY created_at DESC",
-        (g.user["id"],)
-    ).fetchall()
-    return render_template("dashboard.html",itineraries=itineraries)
+    itineraries = (
+        Itinerary.query.filter_by(user_id=current_user.id)
+        .order_by(Itinerary.created_at.desc())
+        .all()
+    )
+    # One DeleteItineraryForm shared across the loop in dashboard.html so
+    # every delete button gets a CSRF token via {{ delete_form.hidden_tag() }}.
+    return render_template(
+        "dashboard.html",
+        itineraries=itineraries,
+        delete_form=DeleteItineraryForm(),
+    )
 
 
 @main.route("/admin")
@@ -165,86 +162,66 @@ def admin_dashboard():
     return render_template("admin_dashboard.html")
 
 
-
-
-
-#This is basically the /itinerary but something else is named that rn
-
+# This is basically the /itinerary but something else is named that rn
 @main.route("/trip_details/<int:id>")
+@login_required
 def trip_details(id):
-    itinerary = {
-        'destination': 'Tokyo to Kyoto',
-        'days': [
-            {
-                'label': 'Day 1 - Tokyo',
-                'activities': [
-                    {'time': '9:00AM', 'title': 'Breakfast at Kurokatsusan', 'info': 'Famous breakfast spot in Tokyo.'},
-                    {'time': '11:00AM', 'title': 'Sushi making class at NOBU', 'info': 'World class sushi course.'},
-                    {'time': '3:00PM', 'title': 'City Bus Tour', 'info': 'See the famous spots with a tour guide.'},
-                ]
-            },
-            {
-                'label': 'Day 2 - Kyoto',
-                'activities': [
-                    {'time': '9:00AM', 'title': 'Hotel Checkout', 'info': 'Check out and head to Kyoto.'},
-                    {'time': '11:00AM', 'title': 'Flight to Kyoto', 'info': 'Make sure not to miss it!'},
-                    {'time': '3:00PM', 'title': 'Hotel Checkin', 'info': 'Check into your new hotel.'},
-                    {'time': '7:00PM', 'title': 'Gion District Night Market', 'info': 'Famous Kyoto night life.'},
-                ]
-            }
-        ]
-    }
-    
-    
-    '''get_db().execute(
-        "SELECT * FROM itineraries WHERE id = ?", (id,)
-    ).fetchone()'''
-#Commented out for fake data trial
-
+    itinerary = db.session.get(Itinerary, id)
+    # Authorisation: must belong to the current user. Without this check
+    # any logged-in user could view any other user's itinerary by guessing
+    # the integer ID. ``abort(404)`` (rather than 403) refuses to confirm
+    # whether the itinerary exists at all, which doesn't leak the ID space.
+    if itinerary is None or itinerary.user_id != current_user.id:
+        abort(404)
     return render_template("trip_details.html", itinerary=itinerary)
-# Route stubs to add as features land:
-#   /itinerary/new (done), /itinerary/<int:id> (done)      (AI generation + detail page)
-
 
 
 @main.route("/itinerary/new", methods=["POST"])
 @login_required
 def new_itinerary():
-    destination = request.form.get("destination", "").strip()
-    start_date = request.form.get("start_date", "").strip()
-    end_date = request.form.get("end_date", "").strip()
+    form = NewItineraryForm()
+    if form.validate_on_submit():
+        # WTForms' DateField has already parsed start_date / end_date into
+        # datetime.date instances at this point — no manual fromisoformat
+        # needed. The cross-field "end >= start" rule is enforced by
+        # NewItineraryForm.validate_end_date.
+        itinerary = Itinerary(
+            user_id=current_user.id,
+            destination=form.destination.data.strip(),
+            start_date=form.start_date.data,
+            end_date=form.end_date.data,
+            content="",
+        )
+        db.session.add(itinerary)
+        db.session.commit()
+        return redirect(url_for("main.trip_details", id=itinerary.id))
 
-    error = None
-    if not destination:
-        error = "Please enter a destination."
-    elif not start_date or not end_date:
-        error = "Please select start and end dates."
-    elif end_date < start_date:
-        error = "End date must be after start date."
-
-    if error:
-        flash(error, "error")
-        return redirect(url_for("main.index"))
-    
-    db = get_db()
-    cursor = db.execute(
-        "INSERT INTO itineraries (user_id, destination, start_date, end_date, content)"
-        " VALUES (?, ?, ?, ?, ?)",
-        (g.user["id"], destination, start_date, end_date, ""),
-    )
-    db.commit()
-    return redirect(url_for("main.trip_details", id=cursor.lastrowid))
+    # Validation failed (CSRF, required, or end_date < start_date). Surface
+    # the first error per field as a flash and bounce back to the homepage
+    # where the form lives.
+    for field_errors in form.errors.values():
+        for msg in field_errors:
+            flash(msg, "error")
+            break
+    return redirect(url_for("main.index"))
 
 
-#Deleting and itinerary
 @main.route("/itinerary/<int:id>/delete", methods=["POST"])
 @login_required
 def delete_itinerary(id):
-    db = get_db()
-    db.execute(
-        "DELETE FROM itineraries WHERE id = ? AND user_id = ?",
-        (id, g.user["id"])
-    )
-    db.commit()
+    form = DeleteItineraryForm()
+    if not form.validate_on_submit():
+        # CSRF token missing or wrong — refuse the delete.
+        flash("The CSRF token is missing.", "error")
+        return redirect(url_for("main.dashboard"))
+
+    itinerary = Itinerary.query.filter_by(id=id, user_id=current_user.id).first()
+    if itinerary is not None:
+        db.session.delete(itinerary)
+        db.session.commit()
     flash("Itinerary deleted.", "success")
     return redirect(url_for("main.dashboard"))
+
+
+# Route stubs to add as features land:
+#   /itinerary/<int:id>      (full AI-generated itinerary detail page)
