@@ -6,114 +6,34 @@
     Tokyo to Kyoto
 </h1>
 
+<button id = "btnShow" class = "btn-tp-secondary">Show All Days</button>
+
 <div class = "mt-2 d-flex gap-2 flex-wrap">
     <button id="btnprev" class="btn-tp-secondary" style = "display:none">Previous Day</button>
     <button id="btnnext" class="btn-tp-secondary">Next Day</button>
 </div>
 
 
-<div class = "tp-itinerary-day" id = "Day 1">
+<!-- UNDER CONSTRUCTION -->
+{% for day in itinerary['days']%}
+<div class = "tp-itinerary-day" id = "{{day['label']}}">
     <div class = "tp-day-label">
-        Day 1 - Tokyo
+        {{day['label']}}
     </div>
-
+{% for activity in day['activities'] %}
     <div class = "tp-time-block">
         <div class = "tp-time-label">
-            9:00AM
+            {{activity['time']}}
         </div>
-        <div class="tp-time-content" data-title="Breakfast at Kurokatsusan" data-info="Famous Japanese breakfast spot in central Tokyo." style="cursor:pointer">
-            Breakfast at Kurokatsusan
-        </div>
-    </div>
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            11:00AM
-        </div>
-        <div class="tp-time-content" data-title="Sushi making class at NOBU" data-info="World class sushi making course with provided lunch." style="cursor:pointer">
-            Sushi making class at NOBU
+        <div class="tp-time-content" data-title= "{{activity['title']}}" data-info="{{activity['info']}}" style="cursor:pointer">
+            {{activity['title']}}
         </div>
     </div>
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            3:00PM
-        </div>
-        <div class="tp-time-content" data-title="City Bus Tour" data-info="See the famous spots with a specialised tour bus and tour guide" style="cursor:pointer">
-            City bus tour
-        </div>
-    </div>
+    {% endfor %}
 </div>
+{% endfor %}
 
-
-<div class = "tp-itinerary-day" id = "Day 2">
-    <div class = "tp-day-label">
-        Day 2 - Tokyo/Kyoto
-    </div>
-
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            9:00AM
-        </div>
-        <div class="tp-time-content" data-title="Hotel Checkout" data-info="Enjoy your last night at the hotel and check out in the morning." style="cursor:pointer">
-            Hotel checkout
-        </div>
-    </div>
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            11:00AM
-        </div>
-        <div class="tp-time-content" data-title="Flight to Kokyo" data-info="Flight from Tokyo airport, make sure not to miss it!" style="cursor:pointer">
-            Flight to Kyoto
-        </div>
-    </div>
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            3:00PM
-        </div>
-        <div class="tp-time-content" data-title="Hotel Checkin" data-info="Check into your new hotel for the next 5 nights." style="cursor:pointer">
-            Hotel Checkin
-        </div>
-    </div>
-
-
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            7:00PM
-        </div>
-        <div class="tp-time-content" data-title="Gion Disctrict Night Market" data-info="Explore the famous night life at Gion Disctrict Night Market." style="cursor:pointer">
-            Gion District night market
-        </div>
-    </div>
-</div>
-<div class = "tp-itinerary-day" id = "Day 3">
-    <div class = "tp-day-label">
-        Day 3 - Kyoto
-    </div>
-
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            9:00AM
-        </div>
-        <div class="tp-time-content" data-title="Breakfast" data-info="Eat some food" style="cursor:pointer">
-            Breakfast at somewhere in kyoto
-        </div>
-    </div>
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            11:00AM
-        </div>
-        <div class="tp-time-content" data-title="Sleep" data-info="Get some rest" style="cursor:pointer">
-            SSleep
-        </div>
-    </div>
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            3:00PM
-        </div>
-        <div class="tp-time-content" data-title="More Sleep" data-info="Get some more rest" style="cursor:pointer">
-            More sleep
-        </div>
-    </div>
-</div>
+<!-- UNDER CONSTRUCTION -->
 
 <div class="modal fade" id="activityModal" tabindex="-1">
   <div class="modal-dialog">
@@ -144,7 +64,9 @@
                 }
             })
         
-
+            if(days.length==1){
+            btnnext.style.display = 'none'
+            }
 
         let scroll = 0
         btnprev.addEventListener('click',function(){
@@ -153,6 +75,7 @@
             scroll -= 1
             if (scroll == 0){
                 btnprev.style.display = 'none'
+                btnnext.style.display = ''
             }
 
             else{
@@ -166,10 +89,31 @@
             scroll += 1
             if (scroll == (days.length-1)){
                 btnnext.style.display = 'none'
+                btnprev.style.display = ''
             }
 
             else{
                 btnprev.style.display = ''
+            }
+        })
+
+        btnShow.addEventListener('click',function(){
+            if (btnShow.innerText == "Show All Days"){
+                days.forEach(function(day){
+                    day.style.display = ''
+                    btnShow.innerText = "Show Day by Day"
+                    btnnext.style.display = 'none'
+                    btnprev.style.display = 'none'
+                })
+            }
+            else{
+                days.forEach(function(day){
+                    day.style.display = 'none'
+                    days[0].style.display = ''
+                    btnShow.innerText = "Show All Days"
+                    btnnext.style.display = ''
+                    scroll = 0
+                })
             }
         })
 
