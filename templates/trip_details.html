@@ -16,7 +16,11 @@
       <p class="tp-text-muted mb-4">{{ plan.summary }}</p>
     {% endif %}
 
+    {# Toggle row — "Show All Days" flips between day-by-day and all-at-once.
+       Hidden entirely if there's only one day, since both modes look the same. #}
     <div class="mt-2 d-flex gap-2 flex-wrap mb-3">
+      <button id="btnShow" class="btn-tp-secondary"
+              {% if plan.days|length <= 1 %}style="display:none"{% endif %}>Show All Days</button>
       <button id="btnprev" class="btn-tp-secondary" style="display:none">Previous Day</button>
       <button id="btnnext" class="btn-tp-secondary"
               {% if plan.days|length <= 1 %}style="display:none"{% endif %}>Next Day</button>
@@ -49,7 +53,7 @@
       </div>
     {% endfor %}
 
-    {# Modal for clicked activities — same shape as before #}
+    {# Modal for clicked activities — populated by the script below. #}
     <div class="modal fade" id="activityModal" tabindex="-1">
       <div class="modal-dialog">
         <div class="modal-content">
@@ -84,30 +88,54 @@
     const days = document.querySelectorAll('.tp-itinerary-day');
     if (!days.length) return;
 
-    // Show day 1; hide the rest.
+    const btnprev = document.getElementById('btnprev');
+    const btnnext = document.getElementById('btnnext');
+    const btnShow = document.getElementById('btnShow');
+
+    // Day-by-day mode (default): show day 1, hide the rest.
     days.forEach(function(day, idx) {
       day.style.display = idx === 0 ? '' : 'none';
     });
-
-    const btnprev = document.getElementById('btnprev');
-    const btnnext = document.getElementById('btnnext');
     let scroll = 0;
 
-    btnprev.addEventListener('click', function() {
-      days[scroll].style.display = 'none';
-      days[scroll - 1].style.display = '';
-      scroll -= 1;
-      if (scroll === 0) btnprev.style.display = 'none';
-      btnnext.style.display = '';
-    });
+    // If there's only one day, all the navigation buttons stay hidden
+    // (their style was already display:none from the Jinja conditionals)
+    // — no JS handlers needed beyond the activity-click modal.
+    if (days.length > 1) {
+      btnprev.addEventListener('click', function() {
+        days[scroll].style.display = 'none';
+        days[scroll - 1].style.display = '';
+        scroll -= 1;
+        if (scroll === 0) btnprev.style.display = 'none';
+        btnnext.style.display = '';
+      });
 
-    btnnext.addEventListener('click', function() {
-      days[scroll].style.display = 'none';
-      days[scroll + 1].style.display = '';
-      scroll += 1;
-      if (scroll === days.length - 1) btnnext.style.display = 'none';
-      btnprev.style.display = '';
-    });
+      btnnext.addEventListener('click', function() {
+        days[scroll].style.display = 'none';
+        days[scroll + 1].style.display = '';
+        scroll += 1;
+        if (scroll === days.length - 1) btnnext.style.display = 'none';
+        btnprev.style.display = '';
+      });
+
+      // "Show All Days" toggles between day-by-day and all-at-once.
+      btnShow.addEventListener('click', function() {
+        if (btnShow.innerText === "Show All Days") {
+          days.forEach(function(day) { day.style.display = ''; });
+          btnShow.innerText = "Show Day by Day";
+          btnnext.style.display = 'none';
+          btnprev.style.display = 'none';
+        } else {
+          days.forEach(function(day, idx) {
+            day.style.display = idx === 0 ? '' : 'none';
+          });
+          btnShow.innerText = "Show All Days";
+          btnnext.style.display = '';
+          btnprev.style.display = 'none';
+          scroll = 0;
+        }
+      });
+    }
 
     // Click an activity -> show its description + a Google Maps link
     // built from the activity location (more accurate than searching
@@ -118,8 +146,7 @@
         document.getElementById('modalInfo').innerText = activity.dataset.info;
         const q = encodeURIComponent(activity.dataset.location || activity.dataset.title);
         document.getElementById('modalMapLink').href = 'https://www.google.com/maps/search/' + q;
-        const modalElement = document.getElementById('activityModal');
-        new bootstrap.Modal(modalElement).show();
+        new bootstrap.Modal(document.getElementById('activityModal')).show();
       });
     });
   });

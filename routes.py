@@ -76,7 +76,7 @@ def register():
                 User(
                     username=form.username.data,
                     email=form.email.data.lower(),
-                    password_hash=generate_password_hash(form.password.data),
+                    password_hash=generate_password_hash(form.password.data, method="pbkdf2:sha256"),
                 )
             )
             db.session.commit()
@@ -162,19 +162,23 @@ def dashboard():
 @main.route("/admin")
 @admin_required
 def admin_dashboard():
-    return render_template("admin_dashboard.html")
+    itineraries = Itinerary.query.order_by(Itinerary.created_at.desc()).all()
+    return render_template("admin_dashboard.html", itineraries=itineraries)
 
 
-# This is basically the /itinerary but something else is named that rn
 @main.route("/trip_details/<int:id>")
 @login_required
 def trip_details(id):
     itinerary = db.session.get(Itinerary, id)
-    # Authorisation: must belong to the current user. Without this check
-    # any logged-in user could view any other user's itinerary by guessing
-    # the integer ID. ``abort(404)`` (rather than 403) refuses to confirm
-    # whether the itinerary exists at all, which doesn't leak the ID space.
-    if itinerary is None or itinerary.user_id != current_user.id:
+
+    # Authorisation: must belong to the current user, OR the current user
+    # must be an admin (so the admin "all itineraries" page can link
+    # straight here for review). ``abort(404)`` (rather than 403) refuses
+    # to confirm whether the itinerary exists at all, so the ID space
+    # doesn't leak.
+    if itinerary is None or (
+        itinerary.user_id != current_user.id and current_user.role != "admin"
+    ):
         abort(404)
 
     # Parse the JSON blob produced by gemma.py back into a dict for the

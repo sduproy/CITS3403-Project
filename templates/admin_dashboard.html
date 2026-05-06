@@ -11,12 +11,36 @@
       <p class="tp-text-muted mb-0">Signed in as {{ current_user.username }} (admin).</p>
     </div>
 
-    {# Empty state — admin tooling (user management, review moderation) lands in a later branch #}
-    <div class="tp-empty">
-      <div class="tp-empty-icon"><i class="bi bi-shield-lock"></i></div>
-      <h5>Admin tools coming soon</h5>
-      <p>User management, itinerary oversight, and review moderation will live here.</p>
-    </div>
+    <h4 class="mb-3" style="font-family:var(--tp-font-display);">All Itineraries</h4>
+    {% if itineraries %}
+      {% for itinerary in itineraries %}
+      <div class="tp-trip-row">
+          <div class="d-flex align-items-center gap-2">
+            <div class="tp-avatar">{{ itinerary.user.username[0].upper() }}</div>
+            <div>
+              <strong>{{ itinerary.destination }}</strong>
+              <span class="tp-text-muted ms-2" style="font-size:0.85rem">
+                {{ itinerary.arrive_time.strftime('%Y-%m-%d %H:%M') }} &rarr; {{ itinerary.leave_time.strftime('%Y-%m-%d %H:%M') }} &middot; @{{ itinerary.user.username }}
+              </span>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            {% if itinerary.is_public %}
+              <span class="tp-badge-public">Public</span>
+            {% else %}
+              <span class="tp-badge-private">Private</span>
+            {% endif %}
+            <a href="{{ url_for('main.trip_details', id=itinerary.id) }}" class="btn btn-sm btn-tp-secondary">View</a>
+          </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="tp-empty">
+        <div class="tp-empty-icon"><i class="bi bi-map"></i></div>
+        <h5>No itineraries yet</h5>
+        <p>No users have created any itineraries yet.</p>
+      </div>
+    {% endif %}
 
   </div>
 </section>
