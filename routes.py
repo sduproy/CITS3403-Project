@@ -159,7 +159,8 @@ def dashboard():
 @main.route("/admin")
 @admin_required
 def admin_dashboard():
-    return render_template("admin_dashboard.html")
+    itineraries = Itinerary.query.order_by(Itinerary.created_at.desc()).all()
+    return render_template("admin_dashboard.html", itineraries=itineraries)
 
 
 # This is basically the /itinerary but something else is named that rn
@@ -171,7 +172,7 @@ def trip_details(id):
     # any logged-in user could view any other user's itinerary by guessing
     # the integer ID. ``abort(404)`` (rather than 403) refuses to confirm
     # whether the itinerary exists at all, which doesn't leak the ID space.
-    if itinerary is None or itinerary.user_id != current_user.id:
+    if itinerary is None or (itinerary.user_id != current_user.id and current_user.role != "admin"):
         abort(404)
     return render_template("trip_details.html", itinerary=itinerary)
 
