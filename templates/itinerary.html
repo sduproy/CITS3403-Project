@@ -17,7 +17,7 @@
 
 <div class="container" id="trip-form">
   <div class="tp-trip-form">
-    <form action="{{ url_for('main.new_itinerary') }}" method="POST">
+    <form action="{{ url_for('main.new_itinerary') }}" method="POST" id="trip-planner-form">
       {{ form.hidden_tag() }}
       <div class="row g-3">
         <div class="col-md-12">
@@ -47,6 +47,40 @@
     </form>
   </div>
 </div>
+
+<!-- Full-screen overlay shown while Gemma is generating the itinerary.
+     The submit handler below makes it visible on form submit; it stays
+     visible until the browser navigates away to /trip_details/<id>
+     (success) or back to / (validation/AI failure, with a flash). -->
+<div class="tp-ai-loading" id="ai-loading-overlay" role="status" aria-live="polite">
+  <div class="tp-ai-spinner" aria-hidden="true"></div>
+  <h3>Generating your itinerary&hellip;</h3>
+  <p>Our AI is planning a day-by-day trip just for you. This usually takes around 30 seconds — please don't close this tab.</p>
+</div>
+
+<script>
+  (function () {
+    const form = document.getElementById('trip-planner-form');
+    const overlay = document.getElementById('ai-loading-overlay');
+    if (!form || !overlay) return;
+
+    form.addEventListener('submit', function () {
+      // The browser has already enforced the `required` attributes on
+      // every input by the time this fires (submit is cancelled before
+      // it reaches us if any are missing), so showing the overlay here
+      // is safe — we know the request is going out.
+      overlay.classList.add('is-visible');
+    });
+
+    // Hide on bfcache restore (browser back button) so the overlay
+    // doesn't linger if the user navigates back to the form.
+    window.addEventListener('pageshow', function (e) {
+      if (e.persisted) {
+        overlay.classList.remove('is-visible');
+      }
+    });
+  })();
+</script>
 
 <section class="tp-section" id="how-it-works">
   <div class="container">
