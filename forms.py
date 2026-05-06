@@ -116,3 +116,6 @@ class DeleteItineraryForm(FlaskForm):
     """No data fields — exists purely so the dashboard delete buttons get a
     CSRF token via ``{{ delete_form.hidden_tag() }}`` and the route can call
     ``form.validate_on_submit()``."""
+
+class TogglePublicForm(FlaskForm):
+    """Empty for for CSRF protection on the public/private toggle."""

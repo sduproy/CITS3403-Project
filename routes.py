@@ -29,7 +29,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from extensions import db
-from forms import DeleteItineraryForm, LoginForm, NewItineraryForm, RegisterForm
+from forms import DeleteItineraryForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm
 from models import Itinerary, User
 
 main = Blueprint("main", __name__)
@@ -227,6 +227,10 @@ def delete_itinerary(id):
 @main.route("/itinerary/<int:id>/toggle_public", methods=["POST"])
 @login_required
 def toggle_public(id):
+    form = TogglePublicForm()
+    if not form.validate_on_submit():
+        flash("The CSRF token is missing.", "error")
+        return redirect(url_for("main.dashboard"))
     itinerary = Itinerary.query.filter_by(id=id, user_id=current_user.id).first()
     if itinerary is not None:
         itinerary.is_public = 0 if itinerary.is_public else 1
