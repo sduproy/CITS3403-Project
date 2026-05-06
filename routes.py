@@ -166,13 +166,42 @@ def admin_dashboard():
 @main.route("/trip_details/<int:id>")
 @login_required
 def trip_details(id):
-    itinerary = db.session.get(Itinerary, id)
+    #itinerary = db.session.get(Itinerary, id)
+    #Will uncomment this later, using fake data for now
+
+    itinerary = {
+        'destination': 'Tokyo to Kyoto',
+        'days': [
+            {
+                'label': 'Day 1 - Tokyo',
+                'activities': [
+                    {'time': '9:00AM', 'title': 'Breakfast at Kurokatsusan', 'info': 'Famous breakfast spot in Tokyo.'},
+                    {'time': '11:00AM', 'title': 'Sushi making class at NOBU', 'info': 'World class sushi course.'},
+                    {'time': '3:00PM', 'title': 'City Bus Tour', 'info': 'See the famous spots with a tour guide.'},
+                ]
+            },
+            {
+                'label': 'Day 2 - Kyoto',
+                'activities': [
+                    {'time': '9:00AM', 'title': 'Hotel Checkout', 'info': 'Check out and head to Kyoto.'},
+                    {'time': '11:00AM', 'title': 'Flight to Kyoto', 'info': 'Make sure not to miss it!'},
+                    {'time': '3:00PM', 'title': 'Hotel Checkin', 'info': 'Check into your new hotel.'},
+                    {'time': '7:00PM', 'title': 'Gion District Night Market', 'info': 'Famous Kyoto night life.'},
+                ]
+            }
+        ]
+    }
+
+
+    
     # Authorisation: must belong to the current user. Without this check
     # any logged-in user could view any other user's itinerary by guessing
     # the integer ID. ``abort(404)`` (rather than 403) refuses to confirm
     # whether the itinerary exists at all, which doesn't leak the ID space.
-    if itinerary is None or itinerary.user_id != current_user.id:
-        abort(404)
+
+    #TODO switch back when using real db
+    # if itinerary is None or itinerary.user_id != current_user.id:
+    #     abort(404)
     return render_template("trip_details.html", itinerary=itinerary)
 
 
