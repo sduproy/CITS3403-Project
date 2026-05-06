@@ -223,6 +223,16 @@ def delete_itinerary(id):
     flash("Itinerary deleted.", "success")
     return redirect(url_for("main.dashboard"))
 
+#toggling itineraries to public and private
+@main.route("/itinerary/<int:id>/toggle_public", methods=["POST"])
+@login_required
+def toggle_public(id):
+    itinerary = Itinerary.query.filter_by(id=id, user_id=current_user.id).first()
+    if itinerary is not None:
+        itinerary.is_public = 0 if itinerary.is_public else 1
+        db.session.commit()
+    return redirect(url_for("main.dashboard"))
+
 
 # Route stubs to add as features land:
 #   /itinerary/<int:id>      (full AI-generated itinerary detail page)
