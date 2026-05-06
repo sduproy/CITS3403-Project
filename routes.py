@@ -159,7 +159,8 @@ def dashboard():
 @main.route("/admin")
 @admin_required
 def admin_dashboard():
-    return render_template("admin_dashboard.html")
+    itineraries = Itinerary.query.order_by(Itinerary.created_at.desc()).all()
+    return render_template("admin_dashboard.html", itineraries=itineraries)
 
 
 # This is basically the /itinerary but something else is named that rn
