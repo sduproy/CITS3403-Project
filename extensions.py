@@ -8,9 +8,16 @@ from here without importing each other.
 """
 
 from flask_login import LoginManager
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
+
+# Alembic-backed migration framework. Bound to the app + db in app.py
+# via migrate.init_app(app, db). Once wired, ``flask db init / migrate
+# / upgrade / downgrade`` become available on the CLI and start writing
+# migration scripts to the migrations/ folder at repo root.
+migrate = Migrate()
 
 login = LoginManager()
 # Endpoint that @login_required redirects anonymous users to. The Blueprint

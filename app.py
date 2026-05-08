@@ -11,7 +11,7 @@ from flask import Flask
 load_dotenv()
 
 import db
-from extensions import db as sa_db, login
+from extensions import db as sa_db, login, migrate
 import models  # noqa: F401 — registers models with SQLAlchemy at import time
 from routes import main
 
@@ -40,6 +40,10 @@ app.config.from_mapping(
 )
 
 sa_db.init_app(app)
+# Migrate must be bound after SQLAlchemy and before any code that uses
+# the migration history; with both wired, ``flask db migrate / upgrade
+# / downgrade`` work from the CLI.
+migrate.init_app(app, sa_db)
 login.init_app(app)
 db.init_app(app)
 app.register_blueprint(main)
