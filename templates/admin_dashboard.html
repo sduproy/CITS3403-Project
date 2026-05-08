@@ -20,7 +20,13 @@
             <div>
               <strong>{{ itinerary.destination }}</strong>
               <span class="tp-text-muted ms-2" style="font-size:0.85rem">
-                {{ itinerary.arrive_time.strftime('%Y-%m-%d %H:%M') }} &rarr; {{ itinerary.leave_time.strftime('%Y-%m-%d %H:%M') }} &middot; @{{ itinerary.user.username }}
+                {{ itinerary.arrive_time.strftime('%Y-%m-%d %H:%M') }} &rarr; {{ itinerary.leave_time.strftime('%Y-%m-%d %H:%M') }}
+                &middot; @{{ itinerary.user.username }}
+                {% if itinerary.user.last_login %}
+                  &middot; last seen {{ itinerary.user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                {% else %}
+                  &middot; never signed in since this feature shipped
+                {% endif %}
               </span>
             </div>
           </div>

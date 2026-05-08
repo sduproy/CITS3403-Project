@@ -112,6 +112,12 @@ def login():
             flash("Invalid username or password.", "error")
             return render_template("login.html", form=form)
 
+        # Stamp the login timestamp before issuing the session so the
+        # admin dashboard can show "last seen at ..." for any user who
+        # has signed in since this column was added (migration 0002).
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+
         login_user(user, remember=form.remember_me.data)
         flash(f"Welcome back, {user.username}!", "success")
 

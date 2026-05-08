@@ -34,6 +34,11 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.Text, nullable=False)
     role = db.Column(db.Text, nullable=False, default="user")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Updated by the login route every time the user successfully signs
+    # in. Nullable so existing rows from before this column was added
+    # don't need a backfill — they'll just show NULL until the user
+    # next logs in.
+    last_login = db.Column(db.DateTime, nullable=True)
 
     # CHECK(role IN ('user', 'admin')) — keeps the schema-level guarantee.
     __table_args__ = (
