@@ -156,6 +156,7 @@ def dashboard():
         "dashboard.html",
         itineraries=itineraries,
         delete_form=DeleteItineraryForm(),
+        toggle_form=TogglePublicForm(),
     )
 
 
