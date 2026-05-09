@@ -9,8 +9,28 @@
     {{ form.hidden_tag() }}
     <input type="hidden" name="plan_json" id="plan-json">
 
-    <!-- destination, arrive/leave date+time inputs here (copy from itinerary.html) -->
-    <!-- optional summary input -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <label for="destination">Destination</label>
+            <input type="text" id="destination" name="destination" class="form-control tp-input" placeholder="e.g. Tokyo, Japan" required>
+        </div>
+        <div class="col-md-3 col-6">
+            <label for="arrive-date">Arrive Date</label>
+            <input type="date" id="arrive-date" name="arrive_date" class="form-control tp-input" required>
+        </div>
+        <div class="col-md-2 col-6">
+            <label for="arrive-at">Arrive Time</label>
+            <input type="time" id="arrive-at" name="arrive_at" class="form-control tp-input" required>
+        </div>
+        <div class="col-md-3 col-6">
+            <label for="leave-date">Leave Date</label>
+            <input type="date" id="leave-date" name="leave_date" class="form-control tp-input" required>
+        </div>
+        <div class="col-md-2 col-6">
+            <label for="leave-at">Leave Time</label>
+            <input type="time" id="leave-at" name="leave_at" class="form-control tp-input" required>
+        </div>
+    </div>
 
     <div id="days-container"></div>
 
@@ -65,7 +85,7 @@
             const activity = document.createElement('div')
             activity.className = 'activity-row mb-2'
             activity.innerHTML = `
-            <div class= "p-2">
+            <div class= "p-2" style="font-size:0.85rem;">
                 <input type="time" class="activity-time form-control tp-input">
                 <input type="text" class="activity-title form-control tp-input" placeholder="Activity title">
                 <input type="text" class="activity-location form-control tp-input" placeholder="Activity location">
