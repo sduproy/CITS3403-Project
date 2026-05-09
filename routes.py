@@ -32,7 +32,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 import gemma
 from extensions import db
-from forms import DeleteItineraryForm, LoginForm, NewItineraryForm, RegisterForm
+from forms import DeleteItineraryForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm
 from models import Itinerary, User
 
 main = Blueprint("main", __name__)
@@ -64,7 +64,12 @@ def index():
 
 @main.route("/community")
 def community():
-    return render_template("community.html")
+    itineraries = (
+        Itinerary.query.filter_by(is_public=1)
+        .order_by(Itinerary.created_at.desc())
+        .all()
+    )
+    return render_template("community.html", itineraries=itineraries)
 
 
 @main.route("/register", methods=("GET", "POST"))
@@ -156,6 +161,7 @@ def dashboard():
         "dashboard.html",
         itineraries=itineraries,
         delete_form=DeleteItineraryForm(),
+        toggle_form=TogglePublicForm(),
     )
 
 
@@ -254,6 +260,20 @@ def delete_itinerary(id):
         db.session.delete(itinerary)
         db.session.commit()
     flash("Itinerary deleted.", "success")
+    return redirect(url_for("main.dashboard"))
+
+#toggling itineraries to public and private
+@main.route("/itinerary/<int:id>/toggle_public", methods=["POST"])
+@login_required
+def toggle_public(id):
+    form = TogglePublicForm()
+    if not form.validate_on_submit():
+        flash("The CSRF token is missing.", "error")
+        return redirect(url_for("main.dashboard"))
+    itinerary = Itinerary.query.filter_by(id=id, user_id=current_user.id).first()
+    if itinerary is not None:
+        itinerary.is_public = 0 if itinerary.is_public else 1
+        db.session.commit()
     return redirect(url_for("main.dashboard"))
 
 
