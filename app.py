@@ -32,6 +32,11 @@ app.config.from_mapping(
     SECRET_KEY=os.environ.get("SECRET_KEY") or "dev-only-INSECURE-set-SECRET_KEY-env-var",
     SQLALCHEMY_DATABASE_URI=f"sqlite:///{db_path}",
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    # Google AI Studio key for the Gemma-powered itinerary generator
+    # (see gemma.py). Loaded from the environment so it stays out of
+    # source control. None means /itinerary/new will refuse to call
+    # the AI and flash an error instead.
+    GOOGLE_API_KEY=os.environ.get("GOOGLE_API_KEY"),
 )
 
 sa_db.init_app(app)

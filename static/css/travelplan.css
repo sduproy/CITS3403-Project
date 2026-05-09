@@ -944,3 +944,53 @@ a:hover {
     padding: 3rem 0;
   }
 }
+
+
+/* ============================================================
+   AI itinerary loading overlay (homepage form submit)
+   ============================================================ */
+.tp-ai-loading {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 34, 53, 0.85);  /* tp-slate at 85% */
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  color: white;
+  text-align: center;
+  padding: 2rem;
+  backdrop-filter: blur(2px);
+}
+
+.tp-ai-loading.is-visible {
+  display: flex;
+}
+
+.tp-ai-spinner {
+  width: 72px;
+  height: 72px;
+  border: 6px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--tp-gold);
+  border-radius: 50%;
+  animation: tp-ai-spin 0.9s linear infinite;
+  margin-bottom: 1.75rem;
+}
+
+@keyframes tp-ai-spin {
+  to { transform: rotate(360deg); }
+}
+
+.tp-ai-loading h3 {
+  font-family: var(--tp-font-display);
+  font-size: 1.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.tp-ai-loading p {
+  opacity: 0.85;
+  max-width: 460px;
+  margin-bottom: 0;
+  font-size: 0.95rem;
+}

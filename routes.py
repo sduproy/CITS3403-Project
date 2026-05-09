@@ -14,6 +14,8 @@ gate also enforces a CSRF token before the handler runs.
 """
 
 import functools
+import json
+from datetime import datetime
 
 from flask import (
     Blueprint,
@@ -28,6 +30,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
+import gemma
 from extensions import db
 from forms import DeleteItineraryForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm
 from models import Itinerary, User
@@ -163,23 +166,32 @@ def admin_dashboard():
     return render_template("admin_dashboard.html", itineraries=itineraries)
 
 
-# This is basically the /itinerary but something else is named that rn
 @main.route("/trip_details/<int:id>")
 @login_required
 def trip_details(id):
     itinerary = db.session.get(Itinerary, id)
 
-
-
-    
-    # Authorisation: must belong to the current user. Without this check
-    # any logged-in user could view any other user's itinerary by guessing
-    # the integer ID. ``abort(404)`` (rather than 403) refuses to confirm
-    # whether the itinerary exists at all, which doesn't leak the ID space.
-
-    if itinerary is None or itinerary.user_id != current_user.id:
+    # Authorisation: must belong to the current user, OR the current user
+    # must be an admin (so the admin "all itineraries" page can link
+    # straight here for review). ``abort(404)`` (rather than 403) refuses
+    # to confirm whether the itinerary exists at all, so the ID space
+    # doesn't leak.
+    if itinerary is None or (
+        itinerary.user_id != current_user.id and current_user.role != "admin"
+    ):
         abort(404)
-    return render_template("trip_details.html", itinerary=itinerary)
+
+    # Parse the JSON blob produced by gemma.py back into a dict for the
+    # template. Older rows (pre-AI) may have empty content — render with
+    # plan=None and let the template fall back to a "not yet generated"
+    # state.
+    plan = None
+    if itinerary.content:
+        try:
+            plan = json.loads(itinerary.content)
+        except json.JSONDecodeError:
+            plan = None
+    return render_template("trip_details.html", itinerary=itinerary, plan=plan)
 
 
 @main.route("/itinerary/new", methods=["POST"])
@@ -187,24 +199,40 @@ def trip_details(id):
 def new_itinerary():
     form = NewItineraryForm()
     if form.validate_on_submit():
-        # WTForms' DateField has already parsed start_date / end_date into
-        # datetime.date instances at this point — no manual fromisoformat
-        # needed. The cross-field "end >= start" rule is enforced by
-        # NewItineraryForm.validate_end_date.
+        # The form has 4 fields (date + time-of-day for both arrive and
+        # leave) so the native HTML5 controls auto-close and fit in one
+        # row. Combine each pair into a full datetime here. The
+        # cross-field "leave > arrive" rule is enforced as a datetime
+        # comparison in NewItineraryForm.validate_leave_at.
+        destination = form.destination.data.strip()
+        arrive_time = datetime.combine(form.arrive_date.data, form.arrive_at.data)
+        leave_time = datetime.combine(form.leave_date.data, form.leave_at.data)
+
+        # Hand off to Gemma. Network call ~5-15s; user sees the redirect
+        # only once the JSON is back and validated. Any failure
+        # (missing API key / network / malformed response) raises
+        # GemmaError, which we turn into a flash + bounce back to /.
+        try:
+            plan = gemma.generate_itinerary(destination, arrive_time, leave_time)
+        except gemma.GemmaError as e:
+            flash(e.user_message, "error")
+            return redirect(url_for("main.index"))
+
+        # Persist only on success — never save a half-baked itinerary.
         itinerary = Itinerary(
             user_id=current_user.id,
-            destination=form.destination.data.strip(),
-            start_date=form.start_date.data,
-            end_date=form.end_date.data,
-            content="",
+            destination=destination,
+            arrive_time=arrive_time,
+            leave_time=leave_time,
+            content=plan.model_dump_json(),
         )
         db.session.add(itinerary)
         db.session.commit()
         return redirect(url_for("main.trip_details", id=itinerary.id))
 
-    # Validation failed (CSRF, required, or end_date < start_date). Surface
-    # the first error per field as a flash and bounce back to the homepage
-    # where the form lives.
+    # Validation failed (CSRF, required, or leave_time <= arrive_time).
+    # Surface the first error per field as a flash and bounce back to the
+    # homepage where the form lives.
     for field_errors in form.errors.values():
         for msg in field_errors:
             flash(msg, "error")
