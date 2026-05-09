@@ -22,6 +22,12 @@
               {{ delete_form.hidden_tag() }}
               <button type="submit" class="btn btn-tp-dark">Delete</button>
             </form>
+            <form method="POST" action="{{ url_for('main.toggle_public', id=itinerary['id'] )}}">
+              {{ toggle_form.hidden_tag() }}
+              <button type="submit" class="btn btn-tp-secondary">
+                {{ "Make Private" if itinerary['is_public'] else "Make Public" }}
+              </button>
+            </form>
           </div>
         </div>
       {% endfor %}
