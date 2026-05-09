@@ -48,6 +48,12 @@
   </div>
 </div>
 
+<div class="container text-center mt-3">
+  <p class="tp-text-muted">Prefer to plan it yourself? 
+    <a href="{{ url_for('main.manual_itinerary') }}">Create a manual itinerary</a>
+  </p>
+</div>
+
 <!-- Full-screen overlay shown while Gemma is generating the itinerary.
      The submit handler below makes it visible on form submit; it stays
      visible until the browser navigates away to /trip_details/<id>
