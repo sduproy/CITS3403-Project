@@ -26,8 +26,15 @@
     let dayCount = 0
 
 
+    function renumberDays() {
+    document.querySelectorAll('.tp-card').forEach(function(c, idx) {
+        c.querySelector('h5').textContent = 'Day ' + (idx + 1)
+    })
+    dayCount = document.querySelectorAll('.tp-card').length
+    }
+
+
     addday.addEventListener('click', function(){
-        dayCount++
         const card = document.createElement('div')
         card.className = 'tp-card mb-3'
         card.innerHTML = `
@@ -40,10 +47,15 @@
             <button type="button" class="add-act-btn btn btn-tp-secondary">Add Activity</button>
         </div>
         `
+
+
         document.getElementById('days-container').appendChild(card)
+        dayCount = document.querySelectorAll('.tp-card').length
+        card.querySelector('h5').textContent = 'Day ' + dayCount
 
         card.querySelector('.remove-day-btn').addEventListener('click', function(){
             card.remove()
+            renumberDays()
         })
 
 
