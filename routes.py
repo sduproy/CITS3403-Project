@@ -257,5 +257,13 @@ def delete_itinerary(id):
     return redirect(url_for("main.dashboard"))
 
 
+@main.route("/manual_itinerary", methods=["GET", "POST"])
+@login_required
+def manual_itinerary():
+    form = DeleteItineraryForm()
+    return render_template("manual_itinerary.html", form=form)
+
+
+
 # Route stubs to add as features land:
 #   /itinerary/<int:id>      (full AI-generated itinerary detail page)
