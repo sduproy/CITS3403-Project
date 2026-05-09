@@ -40,6 +40,27 @@
         </div>
         `
         document.getElementById('days-container').appendChild(card)
+
+
+        addact = card.querySelector('.add-act-btn')
+
+        addact.addEventListener('click', function(){
+            const activity = document.createElement('div')
+            activity.className = 'activity-row mb-2'
+            activity.innerHTML = `
+            <div class= "p-2">
+                <input type="time" class="activity-time form-control tp-input">
+                <input type="text" class="activity-title form-control tp-input" placeholder="Activity title">
+                <input type="text" class="activity-location form-control tp-input" placeholder="Activity location">
+                <input type="text" class="activity-info form-control tp-input" placeholder="Extra information">
+            </div>
+            `
+            card.querySelector('.activities-container').appendChild(activity)
+        })
+
     })
+
+    
+
 </script>
 {% endblock %}
