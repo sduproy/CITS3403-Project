@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Create Manual Itinerary · SmartVoyage{% endblock %}
+{% block content %}
+
+<div class="container" style="max-width:760px; padding-top:2.5rem;">
+
+  <form method="POST" action="{{ url_for('main.manual_itinerary') }}" id="manual-form">
+    {{ form.hidden_tag() }}
+    <input type="hidden" name="plan_json" id="plan-json">
+
+    <!-- destination, arrive/leave date+time inputs here (copy from itinerary.html) -->
+    <!-- optional summary input -->
+
+    <div id="days-container"></div>
+
+    <button type="button" id="addday">Add Day</button>
+    <button type="submit" id="submitform">Save Itinerary</button>
+  </form>
+</div>
+
+
+<script>
+
+    addday = document.getElementById('addday')
+    let dayCount = 0
+
+
+    addday.addEventListener('click', function(){
+        dayCount++
+        const card = document.createElement('div')
+        card.className = 'tp-card mb-3'
+        card.innerHTML = `
+        <div class="card-body"> 
+            <h5>Day ${dayCount}</h5>
+            <input type="date" class="day-date form-control tp-input">
+            <input type="text" class="day-title form-control tp-input" placeholder="Day title">
+            <div class="activities-container"></div>
+            <button type="button" class="add-act-btn btn btn-tp-secondary">Add Activity</button>
+        </div>
+        `
+        document.getElementById('days-container').appendChild(card)
+    })
+</script>
+{% endblock %}
