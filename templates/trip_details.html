@@ -2,139 +2,155 @@
 {% block title %}Trip Detail · SmartVoyage{% endblock %}
 {% block content %}
 
-<h1>
-    Tokyo to Kyoto
-</h1>
+<div class="container" style="max-width:900px;">
 
-<button id = "btnShow" class = "btn-tp-secondary">Show All Days</button>
+  <h1 class="mt-4">{{ itinerary.destination }}</h1>
+  <p class="tp-text-muted">
+    {{ itinerary.arrive_time.strftime('%a %d %b %Y, %H:%M') }}
+    &nbsp;&rarr;&nbsp;
+    {{ itinerary.leave_time.strftime('%a %d %b %Y, %H:%M') }}
+  </p>
 
-<div class = "mt-2 d-flex gap-2 flex-wrap">
-    <button id="btnprev" class="btn-tp-secondary" style = "display:none">Previous Day</button>
-    <button id="btnnext" class="btn-tp-secondary">Next Day</button>
-</div>
+  {% if plan %}
+    {% if plan.summary %}
+      <p class="tp-text-muted mb-4">{{ plan.summary }}</p>
+    {% endif %}
 
-
-<!-- UNDER CONSTRUCTION -->
-{% for day in itinerary['days']%}
-<div class = "tp-itinerary-day" id = "{{day['label']}}">
-    <div class = "tp-day-label">
-        Day - {{day['day_number']}}
+    {# Toggle row — "Show All Days" flips between day-by-day and all-at-once.
+       Hidden entirely if there's only one day, since both modes look the same. #}
+    <div class="mt-2 d-flex gap-2 flex-wrap mb-3">
+      <button id="btnShow" class="btn-tp-secondary"
+              {% if plan.days|length <= 1 %}style="display:none"{% endif %}>Show All Days</button>
+      <button id="btnprev" class="btn-tp-secondary" style="display:none">Previous Day</button>
+      <button id="btnnext" class="btn-tp-secondary"
+              {% if plan.days|length <= 1 %}style="display:none"{% endif %}>Next Day</button>
     </div>
-{% for activity in day['activities'] %}
-    <div class = "tp-time-block">
-        <div class = "tp-time-label">
-            {{activity['time']}}
-        </div>
-        <div class="tp-time-content" data-title= "{{activity['title']}}" data-info="{{activity['info']}}" style="cursor:pointer">
-            {{activity['title']}}
-        </div>
-    </div>
-    {% endfor %}
-</div>
-{% endfor %}
 
-<!-- UNDER CONSTRUCTION -->
+    {% for day in plan.days %}
+      <div class="tp-itinerary-day" id="day-{{ day.day_number }}">
+        <div class="tp-day-label">
+          Day {{ day.day_number }} &mdash; {{ day.title }}
+          <span class="tp-text-muted" style="font-weight:400; font-size:0.85rem;">
+            ({{ day.date }})
+          </span>
+        </div>
 
-<div class="modal fade" id="activityModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalTitle"></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        {% for activity in day.activities %}
+          <div class="tp-time-block">
+            <div class="tp-time-label">{{ activity.time }}</div>
+            <div class="tp-time-content"
+                 data-title="{{ activity.title }}"
+                 data-info="{{ activity.description }} · {{ activity.location }} · ~{{ activity.duration_minutes }} min"
+                 data-location="{{ activity.location }}"
+                 style="cursor:pointer">
+              {{ activity.title }}
+              <span class="tp-text-muted" style="font-size:0.85rem; margin-left:0.5rem;">
+                @ {{ activity.location }}
+              </span>
+            </div>
+          </div>
+        {% endfor %}
       </div>
-      <div class="modal-body" id="modalBody">
-        <p id="modalInfo"></p>
-        <a id="modalMapLink" href="#" target="_blank" class="btn-tp-secondary">View on Google Maps</a>
+    {% endfor %}
+
+    {# Modal for clicked activities — populated by the script below. #}
+    <div class="modal fade" id="activityModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle"></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p id="modalInfo"></p>
+            <a id="modalMapLink" href="#" target="_blank" class="btn-tp-secondary">View on Google Maps</a>
+          </div>
+        </div>
+      </div>
     </div>
+
+  {% else %}
+    {# No plan yet — pre-AI rows or a parse failure. Shouldn't happen on
+       new itineraries, but guard against it so the page doesn't blow up. #}
+    <div class="tp-empty mt-4">
+      <div class="tp-empty-icon"><i class="bi bi-magic"></i></div>
+      <h5>This itinerary hasn't been generated yet</h5>
+      <p>Try planning a new trip from the homepage.</p>
+      <a href="{{ url_for('main.index') }}" class="btn btn-tp-primary">Plan a Trip</a>
     </div>
-  </div>
+  {% endif %}
+
 </div>
 
+{% if plan %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-            const days = document.querySelectorAll('.tp-itinerary-day')
-            let counter = 0
-            days.forEach(function(day){
-                if (counter==0){
-                    counter+=1
-                    return
-                }
-                else{
-                    day.style.display='none'
-                }
-            })
-        
-            if(days.length==1){
-            btnnext.style.display = 'none'
-            }
+  document.addEventListener('DOMContentLoaded', function() {
+    const days = document.querySelectorAll('.tp-itinerary-day');
+    if (!days.length) return;
 
-        let scroll = 0
-        btnprev.addEventListener('click',function(){
-            days[scroll].style.display = 'none'
-            days[scroll-1].style.display = ''
-            scroll -= 1
-            if (scroll == 0){
-                btnprev.style.display = 'none'
-                btnnext.style.display = ''
-            }
+    const btnprev = document.getElementById('btnprev');
+    const btnnext = document.getElementById('btnnext');
+    const btnShow = document.getElementById('btnShow');
 
-            else{
-                btnnext.style.display = ''
-            }
-        })
+    // Day-by-day mode (default): show day 1, hide the rest.
+    days.forEach(function(day, idx) {
+      day.style.display = idx === 0 ? '' : 'none';
+    });
+    let scroll = 0;
 
-        btnnext.addEventListener('click',function(){
-            days[scroll].style.display = 'none'
-            days[scroll+1].style.display = ''
-            scroll += 1
-            if (scroll == (days.length-1)){
-                btnnext.style.display = 'none'
-                btnprev.style.display = ''
-            }
+    // If there's only one day, all the navigation buttons stay hidden
+    // (their style was already display:none from the Jinja conditionals)
+    // — no JS handlers needed beyond the activity-click modal.
+    if (days.length > 1) {
+      btnprev.addEventListener('click', function() {
+        days[scroll].style.display = 'none';
+        days[scroll - 1].style.display = '';
+        scroll -= 1;
+        if (scroll === 0) btnprev.style.display = 'none';
+        btnnext.style.display = '';
+      });
 
-            else{
-                btnprev.style.display = ''
-            }
-        })
+      btnnext.addEventListener('click', function() {
+        days[scroll].style.display = 'none';
+        days[scroll + 1].style.display = '';
+        scroll += 1;
+        if (scroll === days.length - 1) btnnext.style.display = 'none';
+        btnprev.style.display = '';
+      });
 
-        btnShow.addEventListener('click',function(){
-            if (btnShow.innerText == "Show All Days"){
-                days.forEach(function(day){
-                    day.style.display = ''
-                    btnShow.innerText = "Show Day by Day"
-                    btnnext.style.display = 'none'
-                    btnprev.style.display = 'none'
-                })
-            }
-            else{
-                days.forEach(function(day){
-                    day.style.display = 'none'
-                    days[0].style.display = ''
-                    btnShow.innerText = "Show All Days"
-                    btnnext.style.display = ''
-                    scroll = 0
-                })
-            }
-        })
+      // "Show All Days" toggles between day-by-day and all-at-once.
+      btnShow.addEventListener('click', function() {
+        if (btnShow.innerText === "Show All Days") {
+          days.forEach(function(day) { day.style.display = ''; });
+          btnShow.innerText = "Show Day by Day";
+          btnnext.style.display = 'none';
+          btnprev.style.display = 'none';
+        } else {
+          days.forEach(function(day, idx) {
+            day.style.display = idx === 0 ? '' : 'none';
+          });
+          btnShow.innerText = "Show All Days";
+          btnnext.style.display = '';
+          btnprev.style.display = 'none';
+          scroll = 0;
+        }
+      });
+    }
 
-
-        const activities = document.querySelectorAll('.tp-time-content')
-        activities.forEach(function(activity){
-            activity.addEventListener('click', function() {
-            document.getElementById('modalTitle').innerText = activity.dataset.title
-            document.getElementById('modalInfo').innerText = activity.dataset.info
-            document.getElementById('modalMapLink').href = `https://www.google.com/maps/search/${encodeURIComponent(activity.dataset.title)}`
-            const modalElement = document.getElementById('activityModal')
-            const modalInstance = new bootstrap.Modal(modalElement)
-            modalInstance.show()
-        })
-        })
-
-})
+    // Click an activity -> show its description + a Google Maps link
+    // built from the activity location (more accurate than searching
+    // by title).
+    document.querySelectorAll('.tp-time-content').forEach(function(activity) {
+      activity.addEventListener('click', function() {
+        document.getElementById('modalTitle').innerText = activity.dataset.title;
+        document.getElementById('modalInfo').innerText = activity.dataset.info;
+        const q = encodeURIComponent(activity.dataset.location || activity.dataset.title);
+        document.getElementById('modalMapLink').href = 'https://www.google.com/maps/search/' + q;
+        new bootstrap.Modal(document.getElementById('activityModal')).show();
+      });
+    });
+  });
 </script>
-
-
-</div>
-
+{% endif %}
 
 {% endblock %}

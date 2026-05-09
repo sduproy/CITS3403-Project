@@ -19,10 +19,9 @@ sees ``users``, ``itineraries``, and ``reviews``.
 
 import click
 from werkzeug.security import generate_password_hash
-from datetime import date
 
 from extensions import db
-from models import User, Itinerary, Day, Activity
+from models import User
 
 
 def _seed_default_admin():
@@ -38,47 +37,11 @@ def _seed_default_admin():
     )
     db.session.commit()
 
-def _seed_sample_trip():
-    """Insert a base intinerary"""
-    db.session.add(
-        Itinerary(
-            user_id = 1,
-            destination = "Japan",
-            start_date = date(2025, 1, 1),
-            end_date = date(2025, 1, 2),
-        )
-    )
-    db.session.flush()
-
-    db.session.add(
-        Day(
-            itinerary_id = 1,
-            day_number = 1,
-
-        )
-    )
-    db.session.add(
-        Day(
-            itinerary_id = 1,
-            day_number = 2,
-            
-        )
-    )
-    db.session.flush()
-
-    db.session.add_all([
-        Activity(day_id=1, time="9:00AM",  title="Breakfast at Kurokatsusan", info="Famous breakfast spot.", order=0),
-        Activity(day_id=1, time="11:00AM", title="Sushi making class at NOBU", info="World class course.",  order=1),
-        Activity(day_id=2, time="9:00AM",  title="Flight to Kyoto",            info="Don't miss it.",       order=0),
-    ])
-    db.session.commit()
-
 def init_db():
     """Destructive: drop every table, recreate the schema, seed admin."""
     db.drop_all()
     db.create_all()
     _seed_default_admin()
-    _seed_sample_trip()
 
 
 def bootstrap_db():
@@ -96,7 +59,6 @@ def bootstrap_db():
     db.create_all()
     if User.query.count() == 0:
         _seed_default_admin()
-        _seed_sample_trip()
 
 @click.command("init-db")
 def init_db_command():
