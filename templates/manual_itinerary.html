@@ -107,7 +107,40 @@
 
     })
 
-    
+    form = document.getElementById('manual-form')
 
+    form.addEventListener('submit', function(e){
+        const days = []
+
+        document.querySelectorAll('.day-card').forEach(function(card, idx){
+            const activities = []
+
+            card.querySelectorAll('.activity-row').forEach(function(act){
+                activities.push({
+                    time: act.querySelector('.activity-time').value,
+                    title: act.querySelector('.activity-title').value,
+                    location: act.querySelector('.activity-location').value,
+                    description: act.querySelector('.activity-info').value,
+                    duration_minutes: 60
+                })
+            })
+
+            days.push({
+                day_number: idx + 1,
+                date: card.querySelector('.day-date').value,
+                title: card.querySelector('.day-title').value,
+                activities: activities
+            })
+        })
+
+        const plan = {
+            destination: document.getElementById('destination').value,
+            summary: '',
+            days: days
+        }
+
+        document.getElementById('plan-json').value = JSON.stringify(plan)
+
+    })
 </script>
 {% endblock %}
