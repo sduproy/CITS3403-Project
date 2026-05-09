@@ -64,7 +64,12 @@ def index():
 
 @main.route("/community")
 def community():
-    return render_template("community.html")
+    itineraries = (
+        Itinerary.query.filter_by(is_public=1)
+        .order_by(Itinerary.created_at.desc())
+        .all()
+    )
+    return render_template("community.html", itineraries=itineraries)
 
 
 @main.route("/register", methods=("GET", "POST"))
