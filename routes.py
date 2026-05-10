@@ -293,7 +293,7 @@ def admin_delete_itinerary(id):
         return redirect(url_for("main.admin_dashboard"))
     itinerary = db.session.get(Itinerary, id)
     if itinerary is not None:
-        db.sessoin.delete(itinerary)
+        db.session.delete(itinerary)
         db.session.commit()
         flash("Itinerary deleted.", "success")
     return redirect(url_for("main.admin_dashboard"))
