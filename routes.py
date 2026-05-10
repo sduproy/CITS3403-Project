@@ -317,5 +317,36 @@ def admin_delete_user(id):
     return redirect(url_for("main.admin_dashboard"))
 
 
+@main.route("/manual_itinerary", methods=["GET", "POST"])
+@login_required
+def manual_itinerary():
+    form = DeleteItineraryForm()
+    if form.validate_on_submit():
+        destination = request.form.get("destination", "").strip()
+        arrive_time = datetime.strptime(
+            request.form.get("arrive_date") + " " + request.form.get("arrive_at"), "%Y-%m-%d %H:%M"
+        )
+        leave_time = datetime.strptime(
+            request.form.get("leave_date") + " " + request.form.get("leave_at"), "%Y-%m-%d %H:%M"
+        )
+        is_public = int(request.form.get("is_public", 0))
+        plan_json = request.form.get("plan_json", "")
+
+        itinerary = Itinerary(
+            user_id=current_user.id,
+            destination=destination,
+            arrive_time=arrive_time,
+            leave_time=leave_time,
+            content=plan_json,
+            is_public=is_public,
+        )
+        db.session.add(itinerary)
+        db.session.commit()
+        return redirect(url_for("main.trip_details", id=itinerary.id))
+
+    return render_template("manual_itinerary.html", form=form)
+
+
+
 # Route stubs to add as features land:
 #   /itinerary/<int:id>      (full AI-generated itinerary detail page)
