@@ -32,7 +32,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 import gemma
 from extensions import db
-from forms import DeleteItineraryForm, LoginForm, NewItineraryForm, RegisterForm
+from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm
 from models import Itinerary, User
 
 main = Blueprint("main", __name__)
@@ -64,7 +64,12 @@ def index():
 
 @main.route("/community")
 def community():
-    return render_template("community.html")
+    itineraries = (
+        Itinerary.query.filter_by(is_public=1)
+        .order_by(Itinerary.created_at.desc())
+        .all()
+    )
+    return render_template("community.html", itineraries=itineraries)
 
 
 @main.route("/register", methods=("GET", "POST"))
@@ -162,6 +167,7 @@ def dashboard():
         "dashboard.html",
         itineraries=itineraries,
         delete_form=DeleteItineraryForm(),
+        toggle_form=TogglePublicForm(),
     )
 
 
@@ -169,7 +175,14 @@ def dashboard():
 @admin_required
 def admin_dashboard():
     itineraries = Itinerary.query.order_by(Itinerary.created_at.desc()).all()
-    return render_template("admin_dashboard.html", itineraries=itineraries)
+    users = User.query.filter(User.role != "admin").order_by(User.created_at.desc()).all()
+    return render_template(
+        "admin_dashboard.html", 
+        itineraries=itineraries,
+        users=users,
+        delete_itinerary_form=AdminDeleteItineraryForm(),
+        delete_user_form=DeleteUserForm(),
+    )
 
 
 @main.route("/trip_details/<int:id>")
@@ -261,6 +274,84 @@ def delete_itinerary(id):
         db.session.commit()
     flash("Itinerary deleted.", "success")
     return redirect(url_for("main.dashboard"))
+
+#toggling itineraries to public and private
+@main.route("/itinerary/<int:id>/toggle_public", methods=["POST"])
+@login_required
+def toggle_public(id):
+    form = TogglePublicForm()
+    if not form.validate_on_submit():
+        flash("The CSRF token is missing.", "error")
+        return redirect(url_for("main.dashboard"))
+    itinerary = Itinerary.query.filter_by(id=id, user_id=current_user.id).first()
+    if itinerary is not None:
+        itinerary.is_public = 0 if itinerary.is_public else 1
+        db.session.commit()
+    return redirect(url_for("main.dashboard"))
+
+#admin access to deleting itineraries
+@main.route("/admin/itinerary/<int:id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_itinerary(id):
+    form = AdminDeleteItineraryForm()
+    if not form.validate_on_submit():
+        flash("The CSRF token is missing.", "error")
+        return redirect(url_for("main.admin_dashboard"))
+    itinerary = db.session.get(Itinerary, id)
+    if itinerary is not None:
+        db.session.delete(itinerary)
+        db.session.commit()
+        flash("Itinerary deleted.", "success")
+    return redirect(url_for("main.admin_dashboard"))
+
+#admin access to deleting user accounts
+@main.route("/admin/user/<int:id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_user(id):
+    form = DeleteUserForm()
+    if not form.validate_on_submit():
+        flash("The CSRF token is missing.", "error")
+        return redirect(url_for("main.admin_dashboard"))
+    user = db.session.get(User, id)
+    if user is not None:
+        if user.role == "admin":
+            flash("Cannot delete an admin account.", "error")
+            return redirect(url_for("main.admin_dashboard"))
+        db.session.delete(user)
+        db.session.commit()
+        flash(f"User {user.username} deleted.", "success")
+    return redirect(url_for("main.admin_dashboard"))
+
+
+@main.route("/manual_itinerary", methods=["GET", "POST"])
+@login_required
+def manual_itinerary():
+    form = DeleteItineraryForm()
+    if form.validate_on_submit():
+        destination = request.form.get("destination", "").strip()
+        arrive_time = datetime.strptime(
+            request.form.get("arrive_date") + " " + request.form.get("arrive_at"), "%Y-%m-%d %H:%M"
+        )
+        leave_time = datetime.strptime(
+            request.form.get("leave_date") + " " + request.form.get("leave_at"), "%Y-%m-%d %H:%M"
+        )
+        is_public = int(request.form.get("is_public", 0))
+        plan_json = request.form.get("plan_json", "")
+
+        itinerary = Itinerary(
+            user_id=current_user.id,
+            destination=destination,
+            arrive_time=arrive_time,
+            leave_time=leave_time,
+            content=plan_json,
+            is_public=is_public,
+        )
+        db.session.add(itinerary)
+        db.session.commit()
+        return redirect(url_for("main.trip_details", id=itinerary.id))
+
+    return render_template("manual_itinerary.html", form=form)
+
 
 
 # Route stubs to add as features land:

@@ -37,6 +37,10 @@
               <span class="tp-badge-private">Private</span>
             {% endif %}
             <a href="{{ url_for('main.trip_details', id=itinerary.id) }}" class="btn btn-sm btn-tp-secondary">View</a>
+            <form method="POST" action="{{ url_for('main.admin_delete_itinerary', id=itinerary.id) }}" onsubmit="return confirm('Delete this itinerary?')">
+              {{ delete_itinerary_form.hidden_tag() }}
+              <button type="submit" class="btn btn-sm btn-tp-dark">Delete</button>
+            </form>
           </div>
       </div>
       {% endfor %}
@@ -47,6 +51,27 @@
         <p>No users have created any itineraries yet.</p>
       </div>
     {% endif %}
+      
+      <h4 class="mb-3 mt-5" style="font-family:var(--tp-font-display);">All Users</h4>
+      {% if users %}
+        {% for user in users %}
+        <div class="tp-trip-row">
+          <div class="d-flex align-items-center gap-2">
+            <div class="tp-avatar">{{ user.username[0].upper() }}</div>
+            <div>
+              <strong>{{ user.username }}</strong>
+              <span class="tp-text-muted ms-2" style="font-size:0.85rem">{{ user.email }}</span>
+            </div>
+          </div>
+          <form method="POST" action="{{ url_for('main.admin_delete_user', id=user.id) }}" onsubmit="return confirm('Delete user {{ user.username }} and all their data')">
+            {{ delete_user_form.hidden_tag() }}
+            <button type="submit" class="btn btn-sm btn-tp-dark">Delete User</button>
+          </form>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="tp-text-muted">No users yet.</p>
+      {% endif %}
 
   </div>
 </section>
