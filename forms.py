@@ -150,3 +150,9 @@ class DeleteItineraryForm(FlaskForm):
 
 class TogglePublicForm(FlaskForm):
     """Empty for for CSRF protection on the public/private toggle."""
+
+class DeleteUserForm(FlaskForm):
+    """Empty form for CSRF protection on admin user deletion."""
+
+class AdminDeleteItineraryForm(FlaskForm):
+    """Empty form for CSRF protection on admin itinerary deletion."""

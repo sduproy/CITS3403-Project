@@ -32,7 +32,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 import gemma
 from extensions import db
-from forms import DeleteItineraryForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm
+from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm
 from models import Itinerary, User
 
 main = Blueprint("main", __name__)
@@ -169,7 +169,14 @@ def dashboard():
 @admin_required
 def admin_dashboard():
     itineraries = Itinerary.query.order_by(Itinerary.created_at.desc()).all()
-    return render_template("admin_dashboard.html", itineraries=itineraries)
+    users = User.query.filter(User.role != "admin").order_by(User.created_at.desc()).all()
+    return render_template(
+        "admin_dashboard.html", 
+        itineraries=itineraries,
+        users=users,
+        delete_itinerary_form=AdminDeleteItineraryForm(),
+        delete_user_form=DeleteUserForm(),
+    )
 
 
 @main.route("/trip_details/<int:id>")
@@ -275,6 +282,39 @@ def toggle_public(id):
         itinerary.is_public = 0 if itinerary.is_public else 1
         db.session.commit()
     return redirect(url_for("main.dashboard"))
+
+#admin access to deleting itineraries
+@main.route("/admin/itinerary/<int:id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_itinerary(id):
+    form = AdminDeleteItineraryForm()
+    if not form.validate_on_submit():
+        flash("The CSRF token is missing.", "error")
+        return redirect(url_for("main.admin_dashboard"))
+    itinerary = db.session.get(Itinerary, id)
+    if itinerary is not None:
+        db.session.delete(itinerary)
+        db.session.commit()
+        flash("Itinerary deleted.", "success")
+    return redirect(url_for("main.admin_dashboard"))
+
+#admin access to deleting user accounts
+@main.route("/admin/user/<int:id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_user(id):
+    form = DeleteUserForm()
+    if not form.validate_on_submit():
+        flash("The CSRF token is missing.", "error")
+        return redirect(url_for("main.admin_dashboard"))
+    user = db.session.get(User, id)
+    if user is not None:
+        if user.role == "admin":
+            flash("Cannot delete an admin account.", "error")
+            return redirect(url_for("main.admin_dashboard"))
+        db.session.delete(user)
+        db.session.commit()
+        flash(f"User {user.username} deleted.", "success")
+    return redirect(url_for("main.admin_dashboard"))
 
 
 # Route stubs to add as features land:
