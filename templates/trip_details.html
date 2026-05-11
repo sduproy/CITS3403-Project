@@ -24,6 +24,9 @@
       <button id="btnprev" class="btn-tp-secondary" style="display:none">Previous Day</button>
       <button id="btnnext" class="btn-tp-secondary"
               {% if plan.days|length <= 1 %}style="display:none"{% endif %}>Next Day</button>
+      <button type="button" onclick="window.print()" class="btn-tp-secondary">
+        <i class="bi bi-printer"></i> Print itinerary
+      </button>
     </div>
 
     {% for day in plan.days %}
