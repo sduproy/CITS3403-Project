@@ -88,6 +88,31 @@
     <!-- Cards grid -->
     <div class="row g-4" id="cards-grid">
 
+      {% for itinerary in itineraries %}
+      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
+        data-tags="{{ itinerary.destination | lower }}" data-duration="week" data-likes="0" data-rating="0" data-date="{{ itinerary.created_at.strftime('%Y-%m-%d') }}">
+        <div class="tp-card comm-card h-100">
+          <div class="comm-card-img" style="background: linear-gradient(135deg, var(--tp-teal), var(--tp-slate))">
+            <span class="comm-region-badge">{{ itinerary.destination }}</span>
+          </div>
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <a href="{{ url_for('main.user_profile', username=itinerary.user.username) }}" class="tp-avatar">{{ itinerary.user.username[0].upper() }}</a>
+              <div>
+                <a href="{{ url_for('main.user_profile', username=itinerary.user.username) }}" class="fw-semibold" style="font-size:0.88rem;text-decoration:none;color:inherit;">{{ itinerary.user.username }}</a>
+                <div class="tp-text-muted" style="font-size:0.78rem;">{{ itinerary.created_at.strftime('%B %Y') }}</div>
+              </div>
+            </div>
+          <h5 class="card-title">{{ itinerary.destination }}</h5>
+          <p class="card-text flex-grow-1">{{ itinerary.arrive_time.strftime('%d %b') }} - {{ itinerary.leave_time.strftime('%d %b %Y') }}</p>
+          <div class="comm-card-footer d-flex justify-content-between align-items-center">
+            <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <a href="{{ url_for('main.trip_details', id=itinerary.id) }}" class="btn btn-tp-secondary btn-sm">View Trip</a>
+          </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
       <!-- Card 1 -->
       <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
            data-tags="japan tokyo culture" data-duration="week" data-likes="84" data-rating="5" data-date="2026-04-10">
@@ -116,7 +141,7 @@
             </div>
             <div class="comm-card-footer d-flex justify-content-between align-items-center">
               <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
+              <a href="{{ url_for('main.trip_details', id=1) }}" class="btn btn-tp-secondary btn-sm">View Trip</a>
             </div>
           </div>
         </div>

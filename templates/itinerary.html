@@ -17,27 +17,76 @@
 
 <div class="container" id="trip-form">
   <div class="tp-trip-form">
-    <form action="#" method="POST">
+    <form action="{{ url_for('main.new_itinerary') }}" method="POST" id="trip-planner-form">
+      {{ form.hidden_tag() }}
       <div class="row g-3">
-        <div class="col-md-5">
+        <div class="col-md-12">
           <label for="destination">Destination</label>
           <input type="text" id="destination" name="destination" class="form-control tp-input" placeholder="e.g. Tokyo, Japan" required>
         </div>
-        <div class="col-md-3">
-          <label for="start-date">Start Date</label>
-          <input type="date" id="start-date" name="start_date" class="form-control tp-input" required>
+        <div class="col-md-3 col-6">
+          <label for="arrive-date">Arrive Date</label>
+          <input type="date" id="arrive-date" name="arrive_date" class="form-control tp-input" required>
         </div>
-        <div class="col-md-3">
-          <label for="end-date">End Date</label>
-          <input type="date" id="end-date" name="end_date" class="form-control tp-input" required>
+        <div class="col-md-2 col-6">
+          <label for="arrive-at">Arrive Time</label>
+          <input type="time" id="arrive-at" name="arrive_at" class="form-control tp-input" required>
         </div>
-        <div class="col-md-1 d-flex align-items-end">
-          <button type="submit" class="btn btn-tp-primary w-100"><i class="bi bi-magic"></i></button>
+        <div class="col-md-3 col-6">
+          <label for="leave-date">Leave Date</label>
+          <input type="date" id="leave-date" name="leave_date" class="form-control tp-input" required>
+        </div>
+        <div class="col-md-2 col-6">
+          <label for="leave-at">Leave Time</label>
+          <input type="time" id="leave-at" name="leave_at" class="form-control tp-input" required>
+        </div>
+        <div class="col-md-2 col-12 d-flex align-items-end">
+          <button type="submit" class="btn btn-tp-primary w-100"><i class="bi bi-magic"></i> Plan</button>
         </div>
       </div>
     </form>
   </div>
 </div>
+
+<div class="container text-center mt-3">
+  <p class="tp-text-muted">Prefer to plan it yourself? 
+    <a href="{{ url_for('main.manual_itinerary') }}">Create a manual itinerary</a>
+  </p>
+</div>
+
+<!-- Full-screen overlay shown while Gemma is generating the itinerary.
+     The submit handler below makes it visible on form submit; it stays
+     visible until the browser navigates away to /trip_details/<id>
+     (success) or back to / (validation/AI failure, with a flash). -->
+<div class="tp-ai-loading" id="ai-loading-overlay" role="status" aria-live="polite">
+  <div class="tp-ai-spinner" aria-hidden="true"></div>
+  <h3>Generating your itinerary&hellip;</h3>
+  <p>Our AI is planning a day-by-day trip just for you. This usually takes around 30 seconds — please don't close this tab.</p>
+</div>
+
+<script>
+  (function () {
+    const form = document.getElementById('trip-planner-form');
+    const overlay = document.getElementById('ai-loading-overlay');
+    if (!form || !overlay) return;
+
+    form.addEventListener('submit', function () {
+      // The browser has already enforced the `required` attributes on
+      // every input by the time this fires (submit is cancelled before
+      // it reaches us if any are missing), so showing the overlay here
+      // is safe — we know the request is going out.
+      overlay.classList.add('is-visible');
+    });
+
+    // Hide on bfcache restore (browser back button) so the overlay
+    // doesn't linger if the user navigates back to the form.
+    window.addEventListener('pageshow', function (e) {
+      if (e.persisted) {
+        overlay.classList.remove('is-visible');
+      }
+    });
+  })();
+</script>
 
 <section class="tp-section" id="how-it-works">
   <div class="container">
