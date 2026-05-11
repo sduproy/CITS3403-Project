@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{{ profile_user.username }} : SmartVoyage{% endblock %}
+
+{% block content %}
+<section class="tp-section">
+    <div class="container" style="max-width:760px;">
+        <div class="tp-dashboard-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="tp-avatar" style="width:3rem;height:3rem;font-size:1.4rem;">{{ profile_user.username[0].upper() }}</div>
+                <div>
+                    <h2 class="mb-0">{{ profile_user.username }}</h2>
+                    <p class="tp-text-muted mb-0">Member since {{ profile_user.created_at.strftime('%B %Y') }}</p>
+                </div>
+            </div>
+        </div>
+    <h4 class="mb-3" style="font-family:var(--tp-font-display);">Public Itineraries</h4>
+
+    {% if itineraries %}
+        {% for itinerary in itineraries %}
+            <div class="tp-card mb-3">
+                <div class="card-body">
+                    <h5>{{ itinerary.destination }}</h5>
+                    <p class="tp-text-muted">{{ itinerary.arrive_time.strftime('%Y-%m-%d %H:%M') }} &rarr; {{ itinerary.leave_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <a href="{{ url_for('main.trip_details', id=itinerary.id) }}" class="btn btn-tp-primary">View</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+            <div class="tp-empty">
+                <div class="tp-empty-icon"><i class="bi bi-map"></i></div>
+                <h5>No public itineraries</h5>
+                <p>This user hasn't shared any trips</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -366,7 +366,11 @@ def manual_itinerary():
 
     return render_template("manual_itinerary.html", form=form)
 
-
+@main.route("/user/<username>")
+def user_profile(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    itineraries = Itinerary.query.filter_by(user_id=user.id, is_public=1).order_by(Itinerary.created_at.desc()).all()
+    return render_template("user_profiles.html", profile_user=user, itineraries=itineraries)
 
 # Route stubs to add as features land:
 #   /itinerary/<int:id>      (full AI-generated itinerary detail page)
