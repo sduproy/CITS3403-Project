@@ -200,18 +200,19 @@ def admin_dashboard():
 
 
 @main.route("/trip_details/<int:id>")
-@login_required
 def trip_details(id):
     itinerary = db.session.get(Itinerary, id)
+    if itinerary is None:
+        abort(404)
 
-    # Authorisation: must belong to the current user, OR the current user
-    # must be an admin (so the admin "all itineraries" page can link
-    # straight here for review). ``abort(404)`` (rather than 403) refuses
-    # to confirm whether the itinerary exists at all, so the ID space
-    # doesn't leak.
-    if itinerary is None or (
-        itinerary.user_id != current_user.id and current_user.role != "admin"
-    ):
+    # Authorisation: visible if the itinerary is public, OR the viewer is
+    # the owner, OR the viewer is an admin. Anonymous visitors can see
+    # public itineraries only. ``abort(404)`` (rather than 403) refuses
+    # to confirm whether a private itinerary exists, so the ID space
+    # doesn't leak to anonymous probes.
+    is_owner = current_user.is_authenticated and itinerary.user_id == current_user.id
+    is_admin = current_user.is_authenticated and current_user.role == "admin"
+    if not (itinerary.is_public or is_owner or is_admin):
         abort(404)
 
     # Parse the JSON blob produced by gemma.py back into a dict for the
