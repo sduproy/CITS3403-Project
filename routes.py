@@ -176,12 +176,26 @@ def dashboard():
 def admin_dashboard():
     itineraries = Itinerary.query.order_by(Itinerary.created_at.desc()).all()
     users = User.query.filter(User.role != "admin").order_by(User.created_at.desc()).all()
+    total_users = len(users)
+    total_itineraries = Itinerary.query.count()
+    public_itineraries = Itinerary.query.filter_by(is_public=1).count()
+    private_itineraries = total_itineraries - public_itineraries
+
+    from collections import Counter
+    destinations = [i.destination.strip().title() for i in itineraries]
+    top_destination = Counter(destinations).most_common(1)[0][0] if destinations else "N/A"
+    
     return render_template(
         "admin_dashboard.html", 
         itineraries=itineraries,
         users=users,
         delete_itinerary_form=AdminDeleteItineraryForm(),
         delete_user_form=DeleteUserForm(),
+        total_users=total_users,
+        total_itineraries=total_itineraries,
+        public_itineraries=public_itineraries,
+        private_itineraries=private_itineraries,
+        top_destination=top_destination,
     )
 
 
