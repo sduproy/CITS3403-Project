@@ -11,6 +11,33 @@
       <p class="tp-text-muted mb-0">Signed in as {{ current_user.username }} (admin).</p>
     </div>
 
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="tp-card text-center p-3">
+          <div style="font-size:1.8rem;font-weight:700;color:var(--tp-teal)">{{ total_users }}</div>
+          <div class="tp-text-muted" style="font-size:0.85rem">Total Users</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="tp-card text-center p-3">
+          <div style="font-size:1.8rem;font-weight:700;color:var(--tp-teal)">{{ total_itineraries }}</div>
+          <div class="tp-text-muted" style="font-size:0.85rem">Total Itineraries</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="tp-card text-center p-3">
+          <div style="font-size:1.8rem;font-weight:700;color:var(--tp-teal)">{{ public_itineraries }}</div>
+          <div class="tp-text-muted" style="font-size:0.85rem">Public</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="tp-card text-center p-3">
+          <div style="font-size:1.8rem;font-weight:700;color:var(--tp-teal)">{{ top_destination }}</div>
+          <div class="tp-text-muted" style="font-size:0.85rem">Top Destination</div>
+        </div>
+      </div>
+    </div>
+
     <h4 class="mb-3" style="font-family:var(--tp-font-display);">All Itineraries</h4>
     {% if itineraries %}
       {% for itinerary in itineraries %}
