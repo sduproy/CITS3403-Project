@@ -32,7 +32,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 import gemma
 from extensions import db
-from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm, ReviewForm
+from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm, ReviewForm, AdminDeleteReviewForm
 from models import Itinerary, User, Review
 
 main = Blueprint("main", __name__)
@@ -192,6 +192,7 @@ def admin_dashboard():
     from collections import Counter
     destinations = [i.destination.strip().title() for i in itineraries]
     top_destination = Counter(destinations).most_common(1)[0][0] if destinations else "N/A"
+    reviews = Review.query.order_by(Review.created_at.desc()).all()
     
     return render_template(
         "admin_dashboard.html", 
@@ -199,6 +200,8 @@ def admin_dashboard():
         users=users,
         delete_itinerary_form=AdminDeleteItineraryForm(),
         delete_user_form=DeleteUserForm(),
+        reviews=reviews,
+        delete_review_form=AdminDeleteReviewForm(),
         total_users=total_users,
         total_itineraries=total_itineraries,
         public_itineraries=public_itineraries,
@@ -353,6 +356,21 @@ def admin_delete_user(id):
         db.session.delete(user)
         db.session.commit()
         flash(f"User {user.username} deleted.", "success")
+    return redirect(url_for("main.admin_dashboard"))
+
+#admin access for deleting reviews
+@main.route("/admin/review/<int:id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_review(id):
+    form = AdminDeleteReviewForm()
+    if not form.validate_on_submit():
+        flash("The CSRF token is missing.", "error")
+        return redirect(url_for("main.admin_dashboard"))
+    review = db.session.get(Review, id)
+    if review is not None:
+        db.session.delete(review)
+        db.session.commit()
+        flash("Review deleted.", "success")
     return redirect(url_for("main.admin_dashboard"))
 
 
