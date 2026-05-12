@@ -418,5 +418,53 @@ def submit_review(id):
 
 
 
-# Route stubs to add as features land:
-#   /itinerary/<int:id>      (full AI-generated itinerary detail page)
+@main.route("/itinerary/<int:id>/json")
+@login_required
+def itinerary_json(id):
+    itinerary = db.session.get(Itinerary, id)
+    is_owner = current_user.is_authenticated and itinerary.user_id == current_user.id
+    if itinerary is None or (not is_owner and current_user.role != "admin"):
+        abort(404)
+    else:
+        return jsonify({
+            'destination': itinerary.destination,
+            'is_public': itinerary.is_public,
+            'arrive_time': itinerary.arrive_time.strftime('%Y-%m-%d %H:%M'),
+            'leave_time': itinerary.leave_time.strftime('%Y-%m-%d %H:%M'),
+            'content':json.loads(itinerary.content) if itinerary.content else None
+
+        })
+
+
+
+@main.route("/itinerary/<int:id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_itinerary(id):
+    form = EditItineraryForm()
+    itinerary = db.session.get(Itinerary, id)
+    is_owner = current_user.is_authenticated and itinerary.user_id == current_user.id
+
+    if itinerary is None or (not is_owner and current_user.role != "admin"):
+        abort(404)
+
+    if form.validate_on_submit():
+        destination = request.form.get("destination", "").strip()
+        arrive_time = datetime.strptime(
+            request.form.get("arrive_date") + " " + request.form.get("arrive_at"), "%Y-%m-%d %H:%M"
+        )
+        leave_time = datetime.strptime(
+            request.form.get("leave_date") + " " + request.form.get("leave_at"), "%Y-%m-%d %H:%M"
+        )
+        is_public = int(request.form.get("is_public", 0))
+        plan_json = request.form.get("plan_json", "")
+
+
+        itinerary.destination=destination
+        itinerary.arrive_time=arrive_time
+        itinerary.leave_time=leave_time
+        itinerary.content=plan_json
+        itinerary.is_public=is_public
+        
+        db.session.commit()
+        return jsonify({'success': True})
+    return render_template("edit_itinerary.html", form=form, itinerary=itinerary)
