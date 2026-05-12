@@ -75,6 +75,28 @@
                 card.querySelector('.day-date').value = day.date
 
                 document.getElementById('days-container').appendChild(card)
+
+
+                day.activities.forEach(function(daily_activity){
+                    const activity = document.createElement('div')
+                    activity.className = 'activity-row mb-2'
+                    activity.innerHTML = `
+                    <div class= "p-2" style="font-size:0.85rem;">
+                        <input type="time" class="activity-time form-control tp-input">
+                        <input type="text" class="activity-title form-control tp-input" placeholder="Activity title">
+                        <input type="text" class="activity-location form-control tp-input" placeholder="Activity location">
+                        <input type="text" class="activity-info form-control tp-input" placeholder="Extra information">
+                        <button type="button" class="remove-act-btn btn btn-tp-dark">Remove Activity</button>
+                    </div>
+                    `
+
+                    activity.querySelector('.activity-time').value = daily_activity.time
+                    activity.querySelector('.activity-title').value = daily_activity.title
+                    activity.querySelector('.activity-location').value = daily_activity.location
+                    activity.querySelector('.activity-info').value = daily_activity.description
+                    
+                    card.querySelector('.activities-container').appendChild(activity)
+                })
             })
         })
 })
