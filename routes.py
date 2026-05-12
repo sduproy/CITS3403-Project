@@ -320,7 +320,7 @@ def toggle_public(id):
                 f'"{itinerary.destination}" is now private — only you can see it.',
                 "success",
             )
-    return redirect(url_for("main.dashboard"))
+    return jsonify({'is_public': itinerary.is_public})
 
 #admin access to deleting itineraries
 @main.route("/admin/itinerary/<int:id>/delete", methods=["POST"])
