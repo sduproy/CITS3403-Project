@@ -359,7 +359,7 @@ def admin_delete_user(id):
 @main.route("/manual_itinerary", methods=["GET", "POST"])
 @login_required
 def manual_itinerary():
-    form = DeleteItineraryForm()
+    form = ManualItineraryForm()
     if form.validate_on_submit():
         destination = request.form.get("destination", "").strip()
         arrive_time = datetime.strptime(
