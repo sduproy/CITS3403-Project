@@ -24,6 +24,9 @@
       <button id="btnprev" class="btn-tp-secondary" style="display:none">Previous Day</button>
       <button id="btnnext" class="btn-tp-secondary"
               {% if plan.days|length <= 1 %}style="display:none"{% endif %}>Next Day</button>
+      <button type="button" onclick="window.print()" class="btn-tp-secondary">
+        <i class="bi bi-printer"></i> Print itinerary
+      </button>
     </div>
 
     {% for day in plan.days %}
@@ -79,6 +82,38 @@
       <a href="{{ url_for('main.index') }}" class="btn btn-tp-primary">Plan a Trip</a>
     </div>
   {% endif %}
+
+  {# Reviews section — visible to anyone who can see this itinerary
+     (i.e. the public-or-owner-or-admin check in the route already passed).
+     Story 4 will add the review-submission form here; for now this is
+     read-only. #}
+  <section class="mt-5 mb-4">
+    <h3 style="font-family: var(--tp-font-display);">Reviews</h3>
+    {% set sorted_reviews = itinerary.reviews|sort(attribute='created_at', reverse=true) %}
+    {% if sorted_reviews %}
+      {% for review in sorted_reviews %}
+        <div class="tp-review">
+          <div class="d-flex justify-content-between align-items-baseline mb-1">
+            <div class="tp-review-author">
+              <a href="{{ url_for('main.user_profile', username=review.user.username) }}"
+                 style="color: inherit; text-decoration: none;">
+                {{ review.user.username }}
+              </a>
+              <span class="tp-stars ms-2">{% for i in range(1, 6) %}{% if i <= review.rating %}&#9733;{% else %}<span class="empty">&#9733;</span>{% endif %}{% endfor %}</span>
+            </div>
+            <span class="tp-text-muted" style="font-size: 0.78rem;">
+              {{ review.created_at.strftime('%d %b %Y') }}
+            </span>
+          </div>
+          {% if review.comment %}
+            <p class="tp-review-text mb-0">{{ review.comment }}</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="tp-text-muted">No reviews yet.</p>
+    {% endif %}
+  </section>
 
 </div>
 
