@@ -310,16 +310,6 @@ def toggle_public(id):
     if itinerary is not None:
         itinerary.is_public = 0 if itinerary.is_public else 1
         db.session.commit()
-        if itinerary.is_public:
-            flash(
-                f'"{itinerary.destination}" is now public — others can see it on the community page.',
-                "success",
-            )
-        else:
-            flash(
-                f'"{itinerary.destination}" is now private — only you can see it.',
-                "success",
-            )
     return jsonify({'is_public': itinerary.is_public})
 
 #admin access to deleting itineraries
