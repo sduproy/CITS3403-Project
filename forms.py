@@ -162,6 +162,9 @@ class DeleteUserForm(FlaskForm):
 class AdminDeleteItineraryForm(FlaskForm):
     """Empty form for CSRF protection on admin itinerary deletion."""
 
+class EditItineraryForm(FlaskForm):
+    """No data fields — exists purely so the edit itinerary form gets a
+    CSRF token via ``{{ form.hidden_tag() }}``."""
 
 class ReviewForm(FlaskForm):
     rating = IntegerField(
