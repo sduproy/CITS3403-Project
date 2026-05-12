@@ -32,8 +32,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 import gemma
 from extensions import db
-from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm
-from models import Itinerary, User
+from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm, ReviewForm
+from models import Itinerary, User, Review
 
 main = Blueprint("main", __name__)
 
@@ -69,7 +69,15 @@ def community():
         .order_by(Itinerary.created_at.desc())
         .all()
     )
-    return render_template("community.html", itineraries=itineraries)
+    review_data = {}
+    for itin in itineraries:
+        reviews = Review.query.filter_by(itinerary_id=itin.id).all()
+        avg = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 0
+        user_review = None
+        if current_user.is_authenticated:
+            user_review = Review.query.filter_by(itinerary_id=itin.id, user_id=current_user.id).first()
+        review_data[itin.id] = {"avg": avg, "count": len(reviews), "user_review": user_review}
+    return render_template("community.html", itineraries=itineraries, review_data=review_data, review_form=ReviewForm())
 
 
 @main.route("/register", methods=("GET", "POST"))
@@ -382,6 +390,33 @@ def user_profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     itineraries = Itinerary.query.filter_by(user_id=user.id, is_public=1).order_by(Itinerary.created_at.desc()).all()
     return render_template("user_profiles.html", profile_user=user, itineraries=itineraries)
+
+
+#Leaving Reviews
+@main.route("/itinerary/<int:id>/review", methods=["POST"])
+@login_required
+def submit_review(id):
+    form = ReviewForm()
+    if not form.validate_on_submit():
+        flash("Invalid review submission.", "error")
+        return redirect(url_for("main.community"))
+    itinerary = db.session.get(Itinerary, id)
+    if itinerary is None or not itinerary.is_public:
+        flash("Itinerary not found.", "error")
+        return redirect(url_for("main.community"))
+    existing = Review.query.filter_by(itinerary_id=id, user_id=current_user.id).first()
+    if existing:
+        existing.rating = form.rating.data
+        existing.comment = form.comment.data
+    else:
+        db.session.add(Review(itinerary_id=id, user_id=current_user.id, rating=form.rating.data, comment=form.comment.data))
+    db.session.commit()
+    flash("Review submitted!", "success")
+    return redirect(url_for("main.community"))
+
+
+
+
 
 # Route stubs to add as features land:
 #   /itinerary/<int:id>      (full AI-generated itinerary detail page)
