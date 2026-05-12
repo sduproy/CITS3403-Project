@@ -36,6 +36,8 @@ from wtforms import (
     StringField,
     SubmitField,
     TimeField,
+    IntegerField,
+    TextAreaField
 )
 from wtforms.validators import (
     DataRequired,
@@ -43,7 +45,10 @@ from wtforms.validators import (
     Length,
     Regexp,
     ValidationError,
+    NumberRange,
+    Optional
 )
+
 
 
 class RegisterForm(FlaskForm):
@@ -156,3 +161,15 @@ class DeleteUserForm(FlaskForm):
 
 class AdminDeleteItineraryForm(FlaskForm):
     """Empty form for CSRF protection on admin itinerary deletion."""
+
+
+class ReviewForm(FlaskForm):
+    rating = IntegerField(
+        "Rating",
+        validators=[
+            DataRequired(message="Please select a rating."),
+            NumberRange(min=1, max=5, message="Rating must be between 1 and 5."),
+        ],
+    )
+    comment = TextAreaField("Comment", validators=[Optional(), Length(max=500)])
+    submit = SubmitField("Submit Review")

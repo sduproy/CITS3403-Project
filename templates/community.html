@@ -106,12 +106,44 @@
           <h5 class="card-title">{{ itinerary.destination }}</h5>
           <p class="card-text flex-grow-1">{{ itinerary.arrive_time.strftime('%d %b') }} - {{ itinerary.leave_time.strftime('%d %b %Y') }}</p>
           <div class="comm-card-footer d-flex justify-content-between align-items-center">
-            <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-            <a href="{{ url_for('main.trip_details', id=itinerary.id) }}" class="btn btn-tp-secondary btn-sm">View Trip</a>
+            <div>
+              {% set rd = review_data[itinerary.id] %}
+              <span class="tp-text-muted" style="font-size:0.8rem;">
+                {% if rd.avg %}⭐️ {{ rd.avg }} ({{ rd.count }}){% else %}No ratings yet{% endif %}
+              </span>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-tp-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal{{ itinerary.id }}">Rate</button>
+              <a href="{{ url_for('main.trip_details', id=itinerary.id) }}" class="btn btn-tp-secondary btn-sm">View Trip</a>
+            </div>
           </div>
           </div>
         </div>
       </div>
+<!-- Review Modal -->
+      <div class="modal fade" id="reviewModal{{ itinerary.id }}" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Rate {{ itinerary.destination }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form method="POST" action="{{ url_for('main.submit_review', id=itinerary.id) }}">
+            {{ review_form.hidden_tag() }}
+            <div class="modal-body">
+              <label class="form-label">Rating (1-5)</label>
+              <input type="number" name="rating" min="1" max="5" class="form-control tp-input mb-3" value="{{ review_data[itinerary.id].user_review.rating if review_data[itinerary.id].user_review else ''}}" required>
+              <label class="form-label">Comment (optional)</label>
+              <textarea name="comment" class="form-control tp-input" rows="3">{{ review_data[itinerary.id].user_review.comment if review_data[itinerary.id].user_review else '' }}</textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-tp-primary">Submit</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      </div>
+
       {% endfor %}
       <!-- Card 1 -->
       <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
@@ -444,5 +476,10 @@
     window.print();
     printArea.classList.add('d-none');
   }
+</script>
+<script>
+  document.querySelectorAll('.modal').forEach(function(m) {
+    document.body.appendChild(m);
+  });
 </script>
 {% endblock %}
