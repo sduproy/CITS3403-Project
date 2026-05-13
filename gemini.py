@@ -1,26 +1,23 @@
 """
-AI itinerary generator backed by Google AI Studio's Gemma models.
+AI itinerary generator backed by Google AI Studio's Gemini models.
 
 Public API:
 
     plan = generate_itinerary(destination, arrive_time, leave_time)
 
 returns a validated ``ItineraryPlan`` Pydantic model on success, or
-raises ``GemmaError`` with a user-facing message on failure (missing
+raises ``GeminiError`` with a user-facing message on failure (missing
 API key, network, malformed response, refusal, etc.). The route
-layer flashes ``GemmaError.user_message`` and bounces the user back
+layer flashes ``GeminiError.user_message`` and bounces the user back
 to the homepage.
 
-Why we don't use response_schema: AI Studio's structured-output mode
-(``response_mime_type="application/json"`` + ``response_schema=...``)
-is a Gemini-only feature — Gemma rejects it with
-``JSON mode is not enabled for models/gemma-3-27b-it``. So we go the
-JSON-in-prompt route instead: the prompt includes the JSON schema
-inline, asks for "ONLY the JSON object", and the response is then
-stripped of Gemma's habitual ```json ... ``` markdown fences before
-being handed to ``ItineraryPlan.model_validate_json``. This is less
-deterministic than response_schema but it's the only path that works
-for Gemma today.
+Earlier in the project this module backed Gemma 4 (see git history
+on ``gemma.py``). Gemma was slow on the AI Studio free tier (often
+>60s) and rejects structured-output options, so the prompt had to
+inline a JSON schema and the reply had to be stripped of markdown
+code fences. Gemini Flash Lite is faster (~5-15s) and accepts
+``response_schema`` natively — the prompt only describes the content
+rules now, and the SDK hands back a parsed Pydantic instance.
 
 JSON serialisation for persistence happens in routes.py via
 ``plan.model_dump_json()``; the ``Itinerary.content`` column stores
@@ -29,12 +26,11 @@ the result.
 
 from __future__ import annotations
 
-import json
-import re
 from datetime import datetime
 
 from flask import current_app
 from google import genai
+from google.genai import types
 from google.genai.errors import APIError
 from pydantic import BaseModel, Field, ValidationError
 
@@ -69,8 +65,8 @@ class ItineraryPlan(BaseModel):
 # ── Errors ──────────────────────────────────────────────────────────────
 
 
-class GemmaError(Exception):
-    """Anything that goes wrong while talking to Gemma.
+class GeminiError(Exception):
+    """Anything that goes wrong while talking to the AI.
 
     ``user_message`` is safe to flash to the end user; the underlying
     exception (if any) is the chained ``__cause__`` for logging.
@@ -84,42 +80,23 @@ class GemmaError(Exception):
 # ── Prompt ──────────────────────────────────────────────────────────────
 
 
-_MODEL_NAME = "gemma-4-26b-a4b-it"
-"""Gemma 4 instruction-tuned model on Google AI Studio. Gemma 3 (27b
-and below) was throttled with tighter free-tier rate limits after
-Gemma 4 launched, so the bigger Gemma 4 variant is actually faster
-end-to-end for our use case once you account for retries on
-rate-limited Gemma 3 calls."""
-
-
-_JSON_SCHEMA_HINT = """\
-{
-  "destination": "<destination name>",
-  "summary": "<1-2 sentence overview of the trip's theme>",
-  "days": [
-    {
-      "day_number": <1, 2, ...>,
-      "date": "<YYYY-MM-DD>",
-      "title": "<brief title for the day, e.g. 'Arrival & Shibuya'>",
-      "activities": [
-        {
-          "time": "<HH:MM 24-hour>",
-          "title": "<short activity name>",
-          "description": "<one or two sentences>",
-          "location": "<specific neighbourhood or venue>",
-          "duration_minutes": <integer>
-        }
-      ]
-    }
-  ]
-}"""
+_MODEL_NAME = "gemini-3.1-flash-lite"
+"""Gemini Flash Lite on Google AI Studio. The "Lite" variant is
+optimised for low latency rather than reasoning depth, which suits
+this task — building a multi-day itinerary needs broad knowledge but
+not deep reasoning. Free tier on AI Studio covers our project's
+expected request volume. Falls back to ``gemini-2.5-flash`` cleanly if
+this exact revision is rotated out."""
 
 
 def _build_prompt(destination: str, arrive_time: datetime, leave_time: datetime) -> str:
-    """Prompt that asks Gemma for a JSON itinerary. The schema is
-    embedded inline because Gemma doesn't honour response_schema; the
-    response will still need code-fence stripping (see _extract_json)
-    because Gemma reliably wraps its JSON output in ```json ... ```.
+    """Prompt that asks Gemini for a JSON itinerary.
+
+    The JSON shape is enforced by ``response_schema`` (the ItineraryPlan
+    Pydantic class is passed to the SDK), so this prompt only describes
+    the *content* rules — what makes a good plan — not the structural
+    rules. That keeps the prompt focused and the structured-output
+    contract trustworthy.
     """
     arrive_iso = arrive_time.strftime("%Y-%m-%d %H:%M")
     leave_iso = leave_time.strftime("%Y-%m-%d %H:%M")
@@ -145,33 +122,7 @@ def _build_prompt(destination: str, arrive_time: datetime, leave_time: datetime)
         "or venue names within the destination, not vague things like 'downtown'.\n"
         "7. day_number starts at 1 and increases by 1 per day.\n"
         "8. date is the ISO date for that day (YYYY-MM-DD).\n"
-        "\n"
-        "Respond with ONLY a single JSON object matching this exact shape "
-        "(replace placeholders, keep all field names):\n"
-        f"{_JSON_SCHEMA_HINT}\n"
     )
-
-
-_CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*\n?(.*?)\n?```\s*$", re.DOTALL)
-
-
-def _extract_json(raw: str) -> str:
-    """Strip the markdown code fences Gemma always adds around JSON.
-
-    Falls back to a substring-from-first-{-to-last-} extraction if the
-    fence pattern doesn't match, in case Gemma decides to add prose
-    around the JSON on a particular run.
-    """
-    raw = raw.strip()
-    fenced = _CODE_FENCE_RE.match(raw)
-    if fenced:
-        return fenced.group(1).strip()
-    # Fallback: locate the outermost JSON object braces.
-    start = raw.find("{")
-    end = raw.rfind("}")
-    if start != -1 and end != -1 and end > start:
-        return raw[start : end + 1]
-    return raw
 
 
 # ── Public entry point ──────────────────────────────────────────────────
@@ -182,14 +133,14 @@ def generate_itinerary(
     arrive_time: datetime,
     leave_time: datetime,
 ) -> ItineraryPlan:
-    """Generate a structured itinerary by calling Gemma on Google AI Studio.
+    """Generate a structured itinerary by calling Gemini on Google AI Studio.
 
-    Raises ``GemmaError`` on any failure mode. The caller (routes.py)
-    is responsible for catching and flashing ``GemmaError.user_message``.
+    Raises ``GeminiError`` on any failure mode. The caller (routes.py)
+    is responsible for catching and flashing ``GeminiError.user_message``.
     """
     api_key = current_app.config.get("GOOGLE_API_KEY")
     if not api_key:
-        raise GemmaError(
+        raise GeminiError(
             "AI itinerary generation is not configured on this server. "
             "Set GOOGLE_API_KEY in the .env file and restart."
         )
@@ -198,35 +149,47 @@ def generate_itinerary(
 
     try:
         client = genai.Client(api_key=api_key)
-        # No response_schema / response_mime_type — Gemma rejects those.
-        # The schema lives inside the prompt and we parse the response.
+        # Gemini's structured-output mode: pass the Pydantic class as
+        # response_schema with mime type application/json, and the SDK
+        # both forces JSON-only output and parses it for us. Much more
+        # reliable than the JSON-in-prompt approach we had to use for
+        # Gemma, which didn't honour these options.
         response = client.models.generate_content(
             model=_MODEL_NAME,
             contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=ItineraryPlan,
+            ),
         )
     except APIError as e:
         # Network failure, rate limit, invalid key, model refusal, etc.
-        raise GemmaError(
+        raise GeminiError(
             "Couldn't reach the AI service. Please try again in a moment."
         ) from e
     except Exception as e:  # noqa: BLE001 — final safety net for unexpected SDK errors
-        raise GemmaError(
+        raise GeminiError(
             "Something went wrong while generating your itinerary. Please try again."
         ) from e
 
+    # When response_schema is set, the SDK can hand back a parsed
+    # Pydantic instance directly (response.parsed). Some SDK versions
+    # only populate response.text — fall back to validating that.
+    parsed = getattr(response, "parsed", None)
+    if isinstance(parsed, ItineraryPlan):
+        return parsed
+
     raw_text = (response.text or "").strip()
     if not raw_text:
-        raise GemmaError(
+        raise GeminiError(
             "The AI returned an empty itinerary. Try rephrasing your destination or dates."
         )
 
-    json_text = _extract_json(raw_text)
     try:
-        return ItineraryPlan.model_validate_json(json_text)
-    except (ValidationError, json.JSONDecodeError) as e:
-        # Gemma occasionally drifts on the schema (extra fields, missing
-        # fields, wrong types) or returns truncated JSON. Treat as a
-        # transient error — the user can retry.
-        raise GemmaError(
+        return ItineraryPlan.model_validate_json(raw_text)
+    except ValidationError as e:
+        # response_schema makes this rare — the model can still drift
+        # on edge cases (e.g. very short trips), so we keep the catch.
+        raise GeminiError(
             "The AI returned an itinerary in an unexpected format. Please try again."
         ) from e
