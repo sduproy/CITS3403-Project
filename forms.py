@@ -180,3 +180,6 @@ class ReviewForm(FlaskForm):
     )
     comment = TextAreaField("Comment", validators=[Optional(), Length(max=500)])
     submit = SubmitField("Submit Review")
+
+class AdminDeleteReviewForm(FlaskForm):
+    """Empty form for CSRF protection on admin review deletion."""
