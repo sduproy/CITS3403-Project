@@ -21,6 +21,7 @@ from flask import (
     Blueprint,
     abort,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -70,6 +71,19 @@ def community():
         .all()
     )
     return render_template("community.html", itineraries=itineraries)
+
+
+@main.route("/api/trending")
+def api_trending():
+    """Top public destinations as JSON, for AJAX-driven client-side rendering
+    of the trending chips on the community page. Returns at most 5 entries."""
+    from collections import Counter
+    itineraries = Itinerary.query.filter_by(is_public=1).all()
+    destinations = [i.destination.strip().title() for i in itineraries]
+    top = Counter(destinations).most_common(5)
+    return jsonify({
+        "trending": [{"destination": dest, "count": cnt} for dest, cnt in top]
+    })
 
 
 @main.route("/register", methods=("GET", "POST"))

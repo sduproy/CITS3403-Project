@@ -18,13 +18,10 @@
     <p class="comm-subtitle">
       Browse real trips crafted by SmartVoyage members. Get inspired, like your favourites, and print any itinerary for your journey.
     </p>
-    <!-- Trending destination chips -->
-    <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
-      <span class="tp-trending-chip" onclick="filterByTag('Japan')"><i class="bi bi-geo-alt me-1"></i>Japan</span>
-      <span class="tp-trending-chip" onclick="filterByTag('Italy')"><i class="bi bi-geo-alt me-1"></i>Italy</span>
-      <span class="tp-trending-chip" onclick="filterByTag('Iceland')"><i class="bi bi-geo-alt me-1"></i>Iceland</span>
-      <span class="tp-trending-chip" onclick="filterByTag('Morocco')"><i class="bi bi-geo-alt me-1"></i>Morocco</span>
-      <span class="tp-trending-chip" onclick="filterByTag('Thailand')"><i class="bi bi-geo-alt me-1"></i>Thailand</span>
+    <!-- Trending destination chips — populated by AJAX from /api/trending on page load.
+         Client-side rendering: server returns JSON, JS builds the chip DOM. -->
+    <div id="trending-chips" class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+      <span class="tp-text-muted">Loading trending destinations...</span>
     </div>
   </div>
 </section>
@@ -413,6 +410,38 @@
       countEl.textContent = count + 1;
     }
   }
+
+  /* ── Trending Destinations (AJAX / client-side rendering) ── */
+  /* On page load, fetch the top destinations from /api/trending
+     and dynamically render the chips. Server returns JSON only;
+     the browser builds the HTML — that's client-side rendering. */
+  document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/trending')
+      .then(function(response) {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+      })
+      .then(function(data) {
+        var container = document.getElementById('trending-chips');
+        container.innerHTML = '';
+        if (!data.trending || data.trending.length === 0) {
+          container.innerHTML = '<span class="tp-text-muted">No trending destinations yet.</span>';
+          return;
+        }
+        data.trending.forEach(function(item) {
+          var chip = document.createElement('span');
+          chip.className = 'tp-trending-chip';
+          chip.innerHTML = '<i class="bi bi-geo-alt me-1"></i>' + item.destination + ' (' + item.count + ')';
+          chip.onclick = function() { filterByTag(item.destination); };
+          container.appendChild(chip);
+        });
+      })
+      .catch(function(err) {
+        console.error('Trending fetch failed:', err);
+        document.getElementById('trending-chips').innerHTML =
+          '<span class="tp-text-muted">Could not load trending destinations.</span>';
+      });
+  });
 
   /* ── Print Itinerary ────────────────────────────────────── */
   function printItinerary() {
