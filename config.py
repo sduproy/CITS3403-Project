@@ -18,6 +18,8 @@ The factory then does ``app.config.from_object(config_class)``.
 import os
 from pathlib import Path
 
+from sqlalchemy.pool import StaticPool
+
 # Absolute path to the project root so DeploymentConfig can build a
 # DB URI that doesn't depend on the current working directory the app
 # is launched from.
@@ -71,3 +73,14 @@ class TestConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     WTF_CSRF_ENABLED = False
+    # Force every SQLAlchemy connection to use the SAME underlying
+    # SQLite handle. Without this, the Selenium tests' background
+    # server thread would open a *separate* :memory: database and not
+    # see the users/itineraries seeded by the test thread. ``StaticPool``
+    # holds one connection; ``check_same_thread=False`` lets multiple
+    # threads share it. Harmless for unit tests (the test client
+    # runs everything in one thread anyway).
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "connect_args": {"check_same_thread": False},
+        "poolclass": StaticPool,
+    }
