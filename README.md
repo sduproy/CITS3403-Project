@@ -16,7 +16,7 @@ cp .env.example .env
 python -c "import secrets; print('SECRET_KEY=' + secrets.token_hex(32))" >> .env
 
 # 3. (Optional) drop your Google AI Studio key into .env so /itinerary/new
-#    can call Gemini. Without it the AI route flashes an error and refuses.
+#    can call Gemma. Without it the AI route flashes an error and refuses.
 echo "GOOGLE_API_KEY=<paste-from-aistudio.google.com/app/apikey>" >> .env
 
 # 4. Just run. bootstrap_db() applies every migration on startup and
@@ -114,11 +114,11 @@ python -m flask --app app.py db upgrade
 | Forms + CSRF | Flask-WTF + WTForms |
 | ORM | Flask-SQLAlchemy |
 | Migrations | Flask-Migrate (Alembic) |
-| AI itinerary generation | google-genai (Gemini 3.1 Flash Lite via AI Studio) |
+| AI itinerary generation | google-genai (Gemma 4 via AI Studio) |
 | Templates | Jinja2 + Bootstrap 5 |
 | Password hashing | werkzeug.security (pbkdf2:sha256) |
 | Database | SQLite (single file at `instance/travelplan.sqlite`) |
 
 The architecture follows the MVC pattern from the lectures: `models.py` is
 the model layer, `templates/*.html` is the view, and `routes.py` is the
-controller (with `forms.py` and `gemini.py` as adjacent helpers).
+controller (with `forms.py` and `gemma.py` as adjacent helpers).
