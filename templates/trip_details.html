@@ -350,68 +350,161 @@
     // hotel across days) cost one request, not N.
     const geocodeCache = {};
 
-    function geocode(query) {
-      if (geocodeCache[query]) return Promise.resolve(geocodeCache[query]);
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
-      return fetch(url, { headers: { 'Accept-Language': 'en' } })
-        .then(r => r.ok ? r.json() : [])
-        .then(data => {
-          const result = (data && data.length) ? [parseFloat(data[0].lat), parseFloat(data[0].lon)] : null;
-          geocodeCache[query] = result;
-          return result;
-        })
-        .catch(() => null);
+    async function nominatimSearch(params) {
+      const url = `https://nominatim.openstreetmap.org/search?${params.toString()}`;
+      try {
+        const r = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        if (!r.ok) return [];
+        return await r.json();
+      } catch (e) {
+        return [];
+      }
+    }
+
+    // First call: also pull the destination's country code + bounding box,
+    // which we'll use to bias every subsequent activity query so e.g.
+    // "Central Park" doesn't resolve to Manhattan when the trip is in Perth.
+    async function geocodeDestination(query) {
+      if (geocodeCache[query]) return geocodeCache[query];
+      const params = new URLSearchParams({
+        q: query, format: 'json', limit: '1', addressdetails: '1'
+      });
+      const data = await nominatimSearch(params);
+      if (!data.length) { geocodeCache[query] = null; return null; }
+      const r = data[0];
+      const info = {
+        coords: [parseFloat(r.lat), parseFloat(r.lon)],
+        countryCode: r.address && r.address.country_code,
+        // Nominatim returns boundingbox as [south, north, west, east] strings.
+        boundingBox: (r.boundingbox || []).map(parseFloat)
+      };
+      geocodeCache[query] = info;
+      return info;
+    }
+
+    // Geocode an activity location with country + viewbox bias toward the
+    // destination, then pick the result *closest* to the destination centre
+    // (not just Nominatim's top hit, which can be a same-named place
+    // elsewhere). Reject results that are clearly too far away.
+    async function geocodeNearby(query, destInfo) {
+      if (geocodeCache[query]) return geocodeCache[query];
+      const params = new URLSearchParams({
+        q: query, format: 'json', limit: '5'
+      });
+      if (destInfo) {
+        if (destInfo.countryCode) params.set('countrycodes', destInfo.countryCode);
+        if (destInfo.boundingBox && destInfo.boundingBox.length === 4) {
+          const [s, n, w, e] = destInfo.boundingBox;
+          // Pad the box so just-outside neighbourhoods aren't rejected by
+          // ranking. viewbox format is lon_left,lat_top,lon_right,lat_bottom.
+          const padLat = Math.max((n - s) * 0.8, 0.3);
+          const padLon = Math.max((e - w) * 0.8, 0.3);
+          params.set('viewbox', `${w - padLon},${n + padLat},${e + padLon},${s - padLat}`);
+        }
+      }
+      const data = await nominatimSearch(params);
+      if (!data.length) { geocodeCache[query] = null; return null; }
+
+      let best = null, bestDist = Infinity;
+      for (const r of data) {
+        const lat = parseFloat(r.lat);
+        const lon = parseFloat(r.lon);
+        if (destInfo && destInfo.coords) {
+          const d = Math.hypot(lat - destInfo.coords[0], lon - destInfo.coords[1]);
+          if (d < bestDist) { bestDist = d; best = [lat, lon]; }
+        } else if (!best) {
+          best = [lat, lon];
+        }
+      }
+
+      // Sanity reject — anything > ~3° (≈330 km) from the destination centre
+      // is almost certainly the wrong "Central Park"-style match.
+      if (destInfo && bestDist > 3) { geocodeCache[query] = null; return null; }
+
+      geocodeCache[query] = best;
+      return best;
     }
 
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     const bounds = L.latLngBounds();
 
     async function loadMap() {
-      // Centre on the destination first so the user sees something quickly
-      // (1 API call). Per-activity markers are added progressively below.
-      const destCoords = await geocode(destination);
-      if (destCoords) {
-        map.setView(destCoords, 12);
-        bounds.extend(destCoords);
+      statusEl.innerText = 'Locating destination…';
+      const destInfo = await geocodeDestination(destination);
+      if (destInfo) {
+        map.setView(destInfo.coords, 12);
+        bounds.extend(destInfo.coords);
       }
 
-      let placed = 0;
+      let exact = 0, approx = 0;
       for (let i = 0; i < activities.length; i++) {
         const a = activities[i];
+        if (i > 0 || destInfo) await sleep(1100);
+        statusEl.innerText = `Locating ${i + 1}/${activities.length}: ${a.location}…`;
 
-        // Throttle to respect Nominatim's 1 req/sec public-usage policy.
-        // The first call already happened (destination), so we just pace
-        // the rest.
-        if (i > 0 || destCoords) await sleep(1100);
+        // Cascade: full → bare → cleaned. Each new variant costs another
+        // Nominatim request, so only do the next if the previous missed.
+        let coords = await geocodeNearby(`${a.location}, ${destination}`, destInfo);
 
-        // Disambiguate "Central Park" etc. by appending the destination —
-        // Nominatim's top hit can otherwise land on the wrong continent.
-        const coords = await geocode(`${a.location}, ${destination}`)
-                    || await geocode(a.location);
-        if (!coords) {
-          statusEl.innerText = `Geocoding ${i + 1}/${activities.length}… (couldn't locate "${a.location}")`;
-          continue;
+        if (!coords && destInfo) {
+          await sleep(1100);
+          coords = await geocodeNearby(a.location, destInfo);
         }
+
+        if (!coords && destInfo) {
+          // Strip parenthetical/comma suffixes and common filler words.
+          const cleaned = a.location
+            .split(/[,(]/)[0]
+            .replace(/\b(the|a|an)\b/gi, '')
+            .trim();
+          if (cleaned.length > 2 && cleaned.toLowerCase() !== a.location.toLowerCase()) {
+            await sleep(1100);
+            coords = await geocodeNearby(`${cleaned}, ${destination}`, destInfo);
+          }
+        }
+
+        let isApprox = false;
+        if (!coords && destInfo) {
+          // Last resort: drop an "approximate" marker around the destination
+          // centre, spaced apart so multiple unlocated activities don't pile
+          // on the same pixel. Visually distinct (amber dashed border, low
+          // opacity) so the user can see the activity exists but knows the
+          // coordinates aren't pinpointed.
+          const angle = ((i * 137.5) % 360) * Math.PI / 180; // golden angle
+          const radius = 0.008 + 0.004 * (i % 3);            // ~0.8–2 km
+          coords = [
+            destInfo.coords[0] + radius * Math.sin(angle),
+            destInfo.coords[1] + radius * Math.cos(angle)
+          ];
+          isApprox = true;
+        }
+
+        if (!coords) continue;
 
         const colour = dayColors[(a.day - 1) % dayColors.length];
         const marker = L.circleMarker(coords, {
-          radius: 9,
+          radius: isApprox ? 8 : 9,
           fillColor: colour,
-          color: '#ffffff',
-          weight: 2,
+          color: isApprox ? '#ffc107' : '#ffffff',
+          weight: isApprox ? 2 : 2,
           opacity: 1,
-          fillOpacity: 0.95
+          fillOpacity: isApprox ? 0.4 : 0.95,
+          dashArray: isApprox ? '3 3' : null
         }).addTo(map);
 
         const escape = (s) => String(s == null ? '' : s)
           .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const gmapsHref = 'https://www.google.com/maps/search/' +
           encodeURIComponent(`${a.location}, ${destination}`);
+        const approxNote = isApprox
+          ? '<div style="background:#fff8e1; border-left:3px solid #ffc107; padding:5px 7px; font-size:0.78em; margin-bottom:6px; border-radius:2px"><b>Approximate</b> — couldn\'t pinpoint this place. Use the Google Maps link below for the exact spot.</div>'
+          : '';
         marker.bindPopup(
           `<div style="min-width:200px; max-width:260px">
              <div style="font-weight:700; color:${colour}">Day ${a.day} · ${a.time}</div>
              <div style="font-weight:600; margin:2px 0">${escape(a.title)}</div>
              <div style="color:#666; font-size:0.85em; margin-bottom:6px">${escape(a.location)} · ~${escape(a.duration)} min</div>
+             ${approxNote}
              ${a.description ? `<div style="font-size:0.85em; line-height:1.35; margin-bottom:8px">${escape(a.description)}</div>` : ''}
              <a href="${gmapsHref}" target="_blank" rel="noopener"
                 style="font-size:0.8em">Open in Google Maps &rarr;</a>
@@ -428,9 +521,6 @@
           );
           if (block) {
             activate(marker, block);
-            // Make sure the row is visible — if the user is in
-            // day-by-day mode and clicks a marker for a hidden day,
-            // reveal that day's panel.
             const dayPanel = document.getElementById('day-' + a.day);
             if (dayPanel && dayPanel.style.display === 'none') {
               dayPanel.style.display = '';
@@ -440,19 +530,24 @@
         });
 
         bounds.extend(coords);
-        placed += 1;
-        statusEl.innerText = `Placed ${placed}/${activities.length} locations…`;
+        if (isApprox) approx += 1; else exact += 1;
+        statusEl.innerText = approx
+          ? `Placed ${exact} exact + ${approx} approximate of ${activities.length}…`
+          : `Placed ${exact}/${activities.length} locations…`;
 
-        if (placed === 1 && !destCoords) {
+        if ((exact + approx) === 1 && !destInfo) {
           map.setView(coords, 13);
         }
       }
 
-      if (placed > 0) {
+      const total = exact + approx;
+      if (total > 0) {
         map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
-        statusEl.innerText = `Showing ${placed} of ${activities.length} locations.`;
-      } else if (!destCoords) {
-        statusEl.innerText = `Couldn't locate this destination on the map.`;
+        statusEl.innerText = approx === 0
+          ? `Showing all ${exact} locations.`
+          : `Showing ${exact} exact + ${approx} approximate (amber-dashed) locations.`;
+      } else if (!destInfo) {
+        statusEl.innerText = `Couldn't locate "${destination}" on the map.`;
       } else {
         statusEl.innerText = `Couldn't place any activity locations.`;
       }
