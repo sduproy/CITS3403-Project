@@ -121,4 +121,4 @@ python -m flask --app app.py db upgrade
 
 The architecture follows the MVC pattern from the lectures: `models.py` is
 the model layer, `templates/*.html` is the view, and `routes.py` is the
-controller (with `forms.py` and `gemma.py` as adjacent helpers).
+controller (with `forms.py` and `gemini.py` as adjacent helpers).

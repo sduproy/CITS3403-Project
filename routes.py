@@ -30,7 +30,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-import gemma
+import gemini
 from extensions import db
 from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm, ReviewForm
 from models import Itinerary, User, Review
@@ -223,7 +223,7 @@ def trip_details(id):
     if not (itinerary.is_public or is_owner or is_admin):
         abort(404)
 
-    # Parse the JSON blob produced by gemma.py back into a dict for the
+    # Parse the JSON blob produced by gemini.py back into a dict for the
     # template. Older rows (pre-AI) may have empty content — render with
     # plan=None and let the template fall back to a "not yet generated"
     # state.
@@ -250,13 +250,13 @@ def new_itinerary():
         arrive_time = datetime.combine(form.arrive_date.data, form.arrive_at.data)
         leave_time = datetime.combine(form.leave_date.data, form.leave_at.data)
 
-        # Hand off to Gemma. Network call ~5-15s; user sees the redirect
+        # Hand off to Gemini. Network call ~5-15s; user sees the redirect
         # only once the JSON is back and validated. Any failure
         # (missing API key / network / malformed response) raises
-        # GemmaError, which we turn into a flash + bounce back to /.
+        # GeminiError, which we turn into a flash + bounce back to /.
         try:
-            plan = gemma.generate_itinerary(destination, arrive_time, leave_time)
-        except gemma.GemmaError as e:
+            plan = gemini.generate_itinerary(destination, arrive_time, leave_time)
+        except gemini.GeminiError as e:
             flash(e.user_message, "error")
             return redirect(url_for("main.index"))
 
