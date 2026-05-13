@@ -27,6 +27,9 @@
       <button type="button" onclick="window.print()" class="btn-tp-secondary">
         <i class="bi bi-printer"></i> Print itinerary
       </button>
+      {% if itinerary.user_id == current_user.id %}
+        <a href="{{ url_for('main.edit_itinerary', id=itinerary.id) }}" class="btn btn-tp-secondary">Edit</a>
+      {% endif %}
     </div>
 
     {% for day in plan.days %}
