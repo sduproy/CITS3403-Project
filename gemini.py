@@ -6,21 +6,18 @@ Public API:
     plan = generate_itinerary(destination, arrive_time, leave_time)
 
 returns a validated ``ItineraryPlan`` Pydantic model on success, or
-raises ``GemmaError`` with a user-facing message on failure (missing
+raises ``GeminiError`` with a user-facing message on failure (missing
 API key, network, malformed response, refusal, etc.). The route
-layer flashes ``GemmaError.user_message`` and bounces the user back
+layer flashes ``GeminiError.user_message`` and bounces the user back
 to the homepage.
 
-Earlier in the project this module backed Gemma 4 — slow on the AI
-Studio free tier (often >60s) and unable to honour ``response_schema``,
-so the prompt had to inline a JSON schema and the reply had to be
-stripped of markdown code fences. Now that we're on Gemini Flash Lite
-(~5-15s and natively schema-aware) the prompt is content-only and
-the SDK hands back a parsed Pydantic instance.
-
-The module file is still ``gemma.py`` and the exception is still
-``GemmaError`` so this commit is a behaviour-only change — a separate
-follow-up commit handles the rename.
+Earlier in the project this module backed Gemma 4 (see git history
+on ``gemma.py``) — slow on the AI Studio free tier (often >60s) and
+unable to honour ``response_schema``, so the prompt had to inline a
+JSON schema and the reply had to be stripped of markdown code fences.
+Now that we're on Gemini Flash Lite (~5-15s and natively schema-aware)
+the prompt is content-only and the SDK hands back a parsed Pydantic
+instance.
 
 JSON serialisation for persistence happens in routes.py via
 ``plan.model_dump_json()``; the ``Itinerary.content`` column stores
@@ -68,7 +65,7 @@ class ItineraryPlan(BaseModel):
 # ── Errors ──────────────────────────────────────────────────────────────
 
 
-class GemmaError(Exception):
+class GeminiError(Exception):
     """Anything that goes wrong while talking to the AI.
 
     ``user_message`` is safe to flash to the end user; the underlying
@@ -138,12 +135,12 @@ def generate_itinerary(
 ) -> ItineraryPlan:
     """Generate a structured itinerary by calling Gemini on Google AI Studio.
 
-    Raises ``GemmaError`` on any failure mode. The caller (routes.py)
-    is responsible for catching and flashing ``GemmaError.user_message``.
+    Raises ``GeminiError`` on any failure mode. The caller (routes.py)
+    is responsible for catching and flashing ``GeminiError.user_message``.
     """
     api_key = current_app.config.get("GOOGLE_API_KEY")
     if not api_key:
-        raise GemmaError(
+        raise GeminiError(
             "AI itinerary generation is not configured on this server. "
             "Set GOOGLE_API_KEY in the .env file and restart."
         )
@@ -167,11 +164,11 @@ def generate_itinerary(
         )
     except APIError as e:
         # Network failure, rate limit, invalid key, model refusal, etc.
-        raise GemmaError(
+        raise GeminiError(
             "Couldn't reach the AI service. Please try again in a moment."
         ) from e
     except Exception as e:  # noqa: BLE001 — final safety net for unexpected SDK errors
-        raise GemmaError(
+        raise GeminiError(
             "Something went wrong while generating your itinerary. Please try again."
         ) from e
 
@@ -184,7 +181,7 @@ def generate_itinerary(
 
     raw_text = (response.text or "").strip()
     if not raw_text:
-        raise GemmaError(
+        raise GeminiError(
             "The AI returned an empty itinerary. Try rephrasing your destination or dates."
         )
 
@@ -193,6 +190,6 @@ def generate_itinerary(
     except ValidationError as e:
         # response_schema makes this rare — the model can still drift
         # on edge cases (e.g. very short trips), so we keep the catch.
-        raise GemmaError(
+        raise GeminiError(
             "The AI returned an itinerary in an unexpected format. Please try again."
         ) from e
