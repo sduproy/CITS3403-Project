@@ -33,8 +33,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 import gemma
 from extensions import db
-from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm
-from models import Itinerary, User
+from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, ReviewForm, TogglePublicForm
+from models import Itinerary, Review, User
 
 main = Blueprint("main", __name__)
 
@@ -239,7 +239,16 @@ def trip_details(id):
             plan = json.loads(itinerary.content)
         except json.JSONDecodeError:
             plan = None
-    return render_template("trip_details.html", itinerary=itinerary, plan=plan)
+    # Pass an empty ReviewForm so trip_details.html can render the review
+    # submission form with a CSRF token via {{ review_form.hidden_tag() }}.
+    # The template only shows the form to logged-in non-owners; Story 4's
+    # server-side check in submit_review is the authoritative defence.
+    return render_template(
+        "trip_details.html",
+        itinerary=itinerary,
+        plan=plan,
+        review_form=ReviewForm(),
+    )
 
 
 @main.route("/itinerary/new", methods=["POST"])
@@ -397,5 +406,125 @@ def user_profile(username):
     itineraries = Itinerary.query.filter_by(user_id=user.id, is_public=1).order_by(Itinerary.created_at.desc()).all()
     return render_template("user_profiles.html", profile_user=user, itineraries=itineraries)
 
+
+# Story 4: review submission with self-review prevention.
+@main.route("/itinerary/<int:id>/review", methods=["POST"])
+@login_required
+def submit_review(id):
+    form = ReviewForm()
+    itinerary = db.session.get(Itinerary, id)
+    if itinerary is None or not itinerary.is_public:
+        flash("Itinerary not found.", "error")
+        return redirect(url_for("main.community"))
+    # Story 4 core: a user can't review their own itinerary — keeps
+    # ratings fair. Enforced server-side so a forged POST bypassing
+    # the UI gate is still rejected.
+    if itinerary.user_id == current_user.id:
+        flash("You can't review your own itinerary.", "error")
+        return redirect(url_for("main.trip_details", id=id))
+    if not form.validate_on_submit():
+        for field_errors in form.errors.values():
+            for msg in field_errors:
+                flash(msg, "error")
+                break
+        return redirect(url_for("main.trip_details", id=id))
+    # Upsert: one review per (itinerary, user) pair (DB-enforced by the
+    # UniqueConstraint on the Review model). If the user has already
+    # reviewed, update; otherwise insert.
+    existing = Review.query.filter_by(itinerary_id=id, user_id=current_user.id).first()
+    if existing:
+        existing.rating = form.rating.data
+        existing.comment = form.comment.data
+        flash("Your review was updated.", "success")
+    else:
+        db.session.add(Review(
+            itinerary_id=id,
+            user_id=current_user.id,
+            rating=form.rating.data,
+            comment=form.comment.data,
+        ))
+        flash("Review submitted!", "success")
+    db.session.commit()
+    return redirect(url_for("main.trip_details", id=id))
+
+
+# Story 4: review submission with self-review prevention.
+@main.route("/itinerary/<int:id>/review", methods=["POST"])
+@login_required
+def submit_review(id):
+    form = ReviewForm()
+    itinerary = db.session.get(Itinerary, id)
+    if itinerary is None or not itinerary.is_public:
+        flash("Itinerary not found.", "error")
+        return redirect(url_for("main.community"))
+    # Story 4 core: a user can't review their own itinerary — keeps
+    # ratings fair. Enforced server-side so a forged POST bypassing
+    # the UI gate is still rejected.
+    if itinerary.user_id == current_user.id:
+        flash("You can't review your own itinerary.", "error")
+        return redirect(url_for("main.trip_details", id=id))
+    if not form.validate_on_submit():
+        for field_errors in form.errors.values():
+            for msg in field_errors:
+                flash(msg, "error")
+                break
+        return redirect(url_for("main.trip_details", id=id))
+    # Upsert: one review per (itinerary, user) pair (DB-enforced by the
+    # UniqueConstraint on the Review model). If the user has already
+    # reviewed, update; otherwise insert.
+    existing = Review.query.filter_by(itinerary_id=id, user_id=current_user.id).first()
+    if existing:
+        existing.rating = form.rating.data
+        existing.comment = form.comment.data
+        flash("Your review was updated.", "success")
+    else:
+        db.session.add(Review(
+            itinerary_id=id,
+            user_id=current_user.id,
+            rating=form.rating.data,
+            comment=form.comment.data,
+        ))
+        flash("Review submitted!", "success")
+    db.session.commit()
+    return redirect(url_for("main.trip_details", id=id))
+
+
 # Route stubs to add as features land:
 #   /itinerary/<int:id>      (full AI-generated itinerary detail page)
+
+# Story 4: review submission with self-review prevention.
+@main.route("/itinerary/<int:id>/review", methods=["POST"])
+@login_required
+def submit_review(id):
+    form = ReviewForm()
+    itinerary = db.session.get(Itinerary, id)
+    if itinerary is None or not itinerary.is_public:
+        flash("Itinerary not found.", "error")
+        return redirect(url_for("main.community"))
+    # Story 4 core: a user can't review their own itinerary — keeps
+    # ratings fair. Enforced server-side so a forged POST bypassing
+    # the UI gate is still rejected.
+    if itinerary.user_id == current_user.id:
+        flash("You can't review your own itinerary.", "error")
+        return redirect(url_for("main.trip_details", id=id))
+    if not form.validate_on_submit():
+        for field_errors in form.errors.values():
+            for msg in field_errors:
+                flash(msg, "error")
+                break
+        return redirect(url_for("main.trip_details", id=id))
+    existing = Review.query.filter_by(itinerary_id=id, user_id=current_user.id).first()
+    if existing:
+        existing.rating = form.rating.data
+        existing.comment = form.comment.data
+        flash("Your review was updated.", "success")
+    else:
+        db.session.add(Review(
+            itinerary_id=id,
+            user_id=current_user.id,
+            rating=form.rating.data,
+            comment=form.comment.data,
+        ))
+        flash("Review submitted!", "success")
+    db.session.commit()
+    return redirect(url_for("main.trip_details", id=id))
