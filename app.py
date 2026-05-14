@@ -11,6 +11,7 @@ from flask import Flask
 load_dotenv()
 
 import db
+import seed_community
 from extensions import db as sa_db, login, migrate
 import models  # noqa: F401 — registers models with SQLAlchemy at import time
 from routes import main
@@ -45,6 +46,7 @@ sa_db.init_app(app)
 # / downgrade`` work from the CLI.
 migrate.init_app(app, sa_db)
 login.init_app(app)
+seed_community.init_app(app)
 db.init_app(app)
 app.register_blueprint(main)
 
