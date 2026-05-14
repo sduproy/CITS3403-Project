@@ -26,7 +26,7 @@
             <h5>{{ itinerary.destination }}</h5>
             <p class="tp-text-muted">{{ itinerary.arrive_time.strftime('%Y-%m-%d %H:%M') }} &rarr; {{ itinerary.leave_time.strftime('%Y-%m-%d %H:%M') }}</p>
             <a href="{{ url_for('main.trip_details', id=itinerary['id']) }}" class="btn btn-tp-primary">View</a>
-            <form method="POST" action="{{url_for('main.delete_itinerary', id=itinerary['id']) }}">
+            <form method="POST" action="{{url_for('main.delete_itinerary', id=itinerary['id']) }}" class="delete-form">
               {{ delete_form.hidden_tag() }}
               <button type="submit" class="btn btn-tp-dark">Delete</button>
             </form>
@@ -78,6 +78,34 @@
               clearTimeout(msgTimeout)
               msgTimeout = setTimeout(() => { msg.style.display = 'none' }, 3000)
           })
+      })
+    })
+    document.querySelectorAll('.delete-form').forEach(function(form){
+      form.addEventListener('submit', function(e){
+        e.preventDefault()
+        const card = form.closest('.tp-card')
+        card.style.display = 'none'
+        const undoBar = document.createElement('div')
+        undoBar.innerHTML = `
+            <p>Itinerary deleted. <button type="button" class="btn btn-tp-secondary" id="undo-btn">Undo</button></p>
+        `
+        card.parentElement.insertBefore(undoBar, card)
+        const deleteTimeout = setTimeout(function(){
+          fetch(form.action, {
+              method: 'POST',
+              body: new FormData(form)
+          })
+          .then(response => response.json())
+          .then(data => {
+              undoBar.remove()
+          })
+        }, 10000)
+
+        undoBar.querySelector('#undo-btn').addEventListener('click', function(){
+          card.style.display = 'block'
+          undoBar.remove()
+          clearTimeout(deleteTimeout)
+        })
       })
     })
   })
