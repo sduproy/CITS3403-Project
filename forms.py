@@ -37,7 +37,7 @@ from wtforms import (
     StringField,
     SubmitField,
     TextAreaField,
-    TimeField,
+    TimeField
 )
 from wtforms.validators import (
     DataRequired,
@@ -46,8 +46,9 @@ from wtforms.validators import (
     NumberRange,
     Optional,
     Regexp,
-    ValidationError,
+    ValidationError
 )
+
 
 
 class RegisterForm(FlaskForm):

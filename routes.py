@@ -25,16 +25,17 @@ from flask import (
     redirect,
     render_template,
     request,
-    url_for,
+    url_for
 )
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-import gemma
+import gemini
 from extensions import db
-from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, ReviewForm, TogglePublicForm
-from models import Itinerary, Review, User
+from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm, ReviewForm, ManualItineraryForm, EditItineraryForm, AdminDeleteReviewForm
+
+from models import Itinerary, User, Review
 
 main = Blueprint("main", __name__)
 
@@ -70,7 +71,15 @@ def community():
         .order_by(Itinerary.created_at.desc())
         .all()
     )
-    return render_template("community.html", itineraries=itineraries)
+    review_data = {}
+    for itin in itineraries:
+        reviews = Review.query.filter_by(itinerary_id=itin.id).all()
+        avg = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 0
+        user_review = None
+        if current_user.is_authenticated:
+            user_review = Review.query.filter_by(itinerary_id=itin.id, user_id=current_user.id).first()
+        review_data[itin.id] = {"avg": avg, "count": len(reviews), "user_review": user_review}
+    return render_template("community.html", itineraries=itineraries, review_data=review_data, review_form=ReviewForm())
 
 
 @main.route("/api/trending")
@@ -198,6 +207,7 @@ def admin_dashboard():
     from collections import Counter
     destinations = [i.destination.strip().title() for i in itineraries]
     top_destination = Counter(destinations).most_common(1)[0][0] if destinations else "N/A"
+    reviews = Review.query.order_by(Review.created_at.desc()).all()
     
     return render_template(
         "admin_dashboard.html", 
@@ -205,6 +215,8 @@ def admin_dashboard():
         users=users,
         delete_itinerary_form=AdminDeleteItineraryForm(),
         delete_user_form=DeleteUserForm(),
+        reviews=reviews,
+        delete_review_form=AdminDeleteReviewForm(),
         total_users=total_users,
         total_itineraries=total_itineraries,
         public_itineraries=public_itineraries,
@@ -229,7 +241,7 @@ def trip_details(id):
     if not (itinerary.is_public or is_owner or is_admin):
         abort(404)
 
-    # Parse the JSON blob produced by gemma.py back into a dict for the
+    # Parse the JSON blob produced by gemini.py back into a dict for the
     # template. Older rows (pre-AI) may have empty content — render with
     # plan=None and let the template fall back to a "not yet generated"
     # state.
@@ -265,13 +277,13 @@ def new_itinerary():
         arrive_time = datetime.combine(form.arrive_date.data, form.arrive_at.data)
         leave_time = datetime.combine(form.leave_date.data, form.leave_at.data)
 
-        # Hand off to Gemma. Network call ~5-15s; user sees the redirect
+        # Hand off to Gemini. Network call ~5-15s; user sees the redirect
         # only once the JSON is back and validated. Any failure
         # (missing API key / network / malformed response) raises
-        # GemmaError, which we turn into a flash + bounce back to /.
+        # GeminiError, which we turn into a flash + bounce back to /.
         try:
-            plan = gemma.generate_itinerary(destination, arrive_time, leave_time)
-        except gemma.GemmaError as e:
+            plan = gemini.generate_itinerary(destination, arrive_time, leave_time)
+        except gemini.GeminiError as e:
             flash(e.user_message, "error")
             return redirect(url_for("main.index"))
 
@@ -325,17 +337,7 @@ def toggle_public(id):
     if itinerary is not None:
         itinerary.is_public = 0 if itinerary.is_public else 1
         db.session.commit()
-        if itinerary.is_public:
-            flash(
-                f'"{itinerary.destination}" is now public — others can see it on the community page.',
-                "success",
-            )
-        else:
-            flash(
-                f'"{itinerary.destination}" is now private — only you can see it.',
-                "success",
-            )
-    return redirect(url_for("main.dashboard"))
+    return jsonify({'is_public': itinerary.is_public})
 
 #admin access to deleting itineraries
 @main.route("/admin/itinerary/<int:id>/delete", methods=["POST"])
@@ -370,11 +372,26 @@ def admin_delete_user(id):
         flash(f"User {user.username} deleted.", "success")
     return redirect(url_for("main.admin_dashboard"))
 
+#admin access for deleting reviews
+@main.route("/admin/review/<int:id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_review(id):
+    form = AdminDeleteReviewForm()
+    if not form.validate_on_submit():
+        flash("The CSRF token is missing.", "error")
+        return redirect(url_for("main.admin_dashboard"))
+    review = db.session.get(Review, id)
+    if review is not None:
+        db.session.delete(review)
+        db.session.commit()
+        flash("Review deleted.", "success")
+    return redirect(url_for("main.admin_dashboard"))
+
 
 @main.route("/manual_itinerary", methods=["GET", "POST"])
 @login_required
 def manual_itinerary():
-    form = DeleteItineraryForm()
+    form = ManualItineraryForm()
     if form.validate_on_submit():
         destination = request.form.get("destination", "").strip()
         arrive_time = datetime.strptime(
@@ -446,5 +463,55 @@ def submit_review(id):
         flash("Review submitted!", "success")
     db.session.commit()
     return redirect(url_for("main.trip_details", id=id))
+  
+
+@main.route("/itinerary/<int:id>/json")
+@login_required
+def itinerary_json(id):
+    itinerary = db.session.get(Itinerary, id)
+    is_owner = current_user.is_authenticated and itinerary.user_id == current_user.id
+    if itinerary is None or (not is_owner and current_user.role != "admin"):
+        abort(404)
+    else:
+        return jsonify({
+            'destination': itinerary.destination,
+            'is_public': itinerary.is_public,
+            'arrive_time': itinerary.arrive_time.strftime('%Y-%m-%d %H:%M'),
+            'leave_time': itinerary.leave_time.strftime('%Y-%m-%d %H:%M'),
+            'content':json.loads(itinerary.content) if itinerary.content else None
+
+        })
 
 
+
+@main.route("/itinerary/<int:id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_itinerary(id):
+    form = EditItineraryForm()
+    itinerary = db.session.get(Itinerary, id)
+    is_owner = current_user.is_authenticated and itinerary.user_id == current_user.id
+
+    if itinerary is None or (not is_owner and current_user.role != "admin"):
+        abort(404)
+
+    if form.validate_on_submit():
+        destination = request.form.get("destination", "").strip()
+        arrive_time = datetime.strptime(
+            request.form.get("arrive_date") + " " + request.form.get("arrive_at"), "%Y-%m-%d %H:%M"
+        )
+        leave_time = datetime.strptime(
+            request.form.get("leave_date") + " " + request.form.get("leave_at"), "%Y-%m-%d %H:%M"
+        )
+        is_public = int(request.form.get("is_public", 0))
+        plan_json = request.form.get("plan_json", "")
+
+
+        itinerary.destination=destination
+        itinerary.arrive_time=arrive_time
+        itinerary.leave_time=leave_time
+        itinerary.content=plan_json
+        itinerary.is_public=is_public
+        
+        db.session.commit()
+        return jsonify({'success': True})
+    return render_template("edit_itinerary.html", form=form, itinerary=itinerary)

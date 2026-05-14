@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Itinerary · SmartVoyage{% endblock %}
+{% block content %}
+
+<div class="container" style="max-width:760px; padding-top:2.5rem;">
+
+  <form method="POST" action="{{ url_for('main.edit_itinerary', id=itinerary.id) }}" id="manual-form">
+    {{ form.hidden_tag() }}
+    <input type="hidden" name="plan_json" id="plan-json">
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <label for="destination">Destination</label>
+            <input type="text" id="destination" name="destination" class="form-control tp-input" placeholder="e.g. Tokyo, Japan" required>
+        </div>
+        <div class="col-md-3 col-6">
+            <label for="arrive-date">Arrive Date</label>
+            <input type="date" id="arrive-date" name="arrive_date" class="form-control tp-input" required>
+        </div>
+        <div class="col-md-2 col-6">
+            <label for="arrive-at">Arrive Time</label>
+            <input type="time" id="arrive-at" name="arrive_at" class="form-control tp-input" required>
+        </div>
+        <div class="col-md-3 col-6">
+            <label for="leave-date">Leave Date</label>
+            <input type="date" id="leave-date" name="leave_date" class="form-control tp-input" required>
+        </div>
+        <div class="col-md-2 col-6">
+            <label for="leave-at">Leave Time</label>
+            <input type="time" id="leave-at" name="leave_at" class="form-control tp-input" required>
+        </div>
+    </div>
+
+    <select name="is_public" class="form-control tp-input mb-3">
+        <option value="0">Private</option>
+        <option value="1">Public</option>
+    </select>
+
+    <div id="days-container"></div>
+
+    <button type="button" id="addday">Add Day</button>
+    <button type="submit" id="submitform">Save Itinerary</button>
+  </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    fetch('/itinerary/{{ itinerary.id }}/json')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('destination').value = data.destination
+            const [arriveDate, arriveTime] = data.arrive_time.split(' ')
+            const [leaveDate, leaveTime] = data.leave_time.split(' ')
+            document.getElementById('arrive-date').value = arriveDate
+            document.getElementById('arrive-at').value = arriveTime
+            document.getElementById('leave-date').value = leaveDate
+            document.getElementById('leave-at').value = leaveTime
+            document.querySelector('select[name="is_public"]').value = data.is_public
+
+            data.content.days.forEach(function(day){
+                const card = document.createElement('div')
+                card.className = 'tp-card mb-3'
+                card.innerHTML = `
+                <div class="card-body"> 
+                    <h5>Day ${day.day_number}</h5>
+                    <input type="date" class="day-date form-control tp-input">
+                    <input type="text" class="day-title form-control tp-input" placeholder="Day title">
+                    <div class="activities-container"></div>
+                    <button type="button" class="remove-day-btn btn btn-tp-dark">Remove Day</button>
+                    <button type="button" class="add-act-btn btn btn-tp-secondary">Add Activity</button>
+                </div>
+                `
+                card.querySelector('.day-title').value = day.title                
+                card.querySelector('.day-date').value = day.date
+
+                document.getElementById('days-container').appendChild(card)
+
+                card.querySelector('.remove-day-btn').addEventListener('click', function(){
+                    card.remove()
+                })
+
+                card.querySelector('.add-act-btn').addEventListener('click', function(){
+                    const activity = document.createElement('div')
+                    activity.className = 'activity-row mb-2'
+                    activity.innerHTML = `
+                    <div class="p-2" style="font-size:0.85rem;">
+                        <input type="time" class="activity-time form-control tp-input">
+                        <input type="text" class="activity-title form-control tp-input" placeholder="Activity title">
+                        <input type="text" class="activity-location form-control tp-input" placeholder="Activity location">
+                        <input type="text" class="activity-info form-control tp-input" placeholder="Extra information">
+                        <button type="button" class="remove-act-btn btn btn-tp-dark">Remove Activity</button>
+                    </div>
+                    `
+                    card.querySelector('.activities-container').appendChild(activity)
+                    activity.querySelector('.remove-act-btn').addEventListener('click', function(){
+                        activity.remove()
+                    })
+                })
+
+                day.activities.forEach(function(daily_activity){
+                    const activity = document.createElement('div')
+                    activity.className = 'activity-row mb-2'
+                    activity.innerHTML = `
+                    <div class= "p-2" style="font-size:0.85rem;">
+                        <input type="time" class="activity-time form-control tp-input">
+                        <input type="text" class="activity-title form-control tp-input" placeholder="Activity title">
+                        <input type="text" class="activity-location form-control tp-input" placeholder="Activity location">
+                        <input type="text" class="activity-info form-control tp-input" placeholder="Extra information">
+                        <button type="button" class="remove-act-btn btn btn-tp-dark">Remove Activity</button>
+                    </div>
+                    `
+
+                    activity.querySelector('.activity-time').value = daily_activity.time
+                    activity.querySelector('.activity-title').value = daily_activity.title
+                    activity.querySelector('.activity-location').value = daily_activity.location
+                    activity.querySelector('.activity-info').value = daily_activity.description
+                    
+                    card.querySelector('.activities-container').appendChild(activity)
+                    activity.querySelector('.remove-act-btn').addEventListener('click', function(){
+                        activity.remove()
+                    })
+                })
+            })
+        })
+        
+        dayCount = 0
+
+        const addday = document.getElementById('addday')
+
+        addday.addEventListener('click', function(){
+            const card = document.createElement('div')
+            card.className = 'tp-card mb-3'
+            card.innerHTML = `
+            <div class="card-body"> 
+                <h5>Day ${dayCount}</h5>
+                <input type="date" class="day-date form-control tp-input">
+                <input type="text" class="day-title form-control tp-input" placeholder="Day title">
+                <div class="activities-container"></div>
+                <button type="button" class="remove-day-btn btn btn-tp-dark">Remove Day</button>
+                <button type="button" class="add-act-btn btn btn-tp-secondary">Add Activity</button>
+            </div>
+            `
+
+
+            document.getElementById('days-container').appendChild(card)
+            dayCount = document.querySelectorAll('.tp-card').length
+            card.querySelector('h5').textContent = 'Day ' + dayCount
+
+            card.querySelector('.remove-day-btn').addEventListener('click', function(){
+                card.remove()
+                renumberDays()
+            })
+
+
+            addact = card.querySelector('.add-act-btn')
+
+            addact.addEventListener('click', function(){
+                const activity = document.createElement('div')
+                activity.className = 'activity-row mb-2'
+                activity.innerHTML = `
+                <div class= "p-2" style="font-size:0.85rem;">
+                    <input type="time" class="activity-time form-control tp-input">
+                    <input type="text" class="activity-title form-control tp-input" placeholder="Activity title">
+                    <input type="text" class="activity-location form-control tp-input" placeholder="Activity location">
+                    <input type="text" class="activity-info form-control tp-input" placeholder="Extra information">
+                    <button type="button" class="remove-act-btn btn btn-tp-dark">Remove Activity</button>
+                </div>
+                `
+                card.querySelector('.activities-container').appendChild(activity)
+
+                activity.querySelector('.remove-act-btn').addEventListener('click', function(){
+                    activity.remove()
+                })
+            })
+
+        
+
+        })
+        const form = document.getElementById('manual-form')
+
+        form.addEventListener('submit', function(e){
+            e.preventDefault()
+            
+            const days = []
+            document.querySelectorAll('.tp-card').forEach(function(card, idx){
+                const activities = []
+                card.querySelectorAll('.activity-row').forEach(function(act){
+                    activities.push({
+                        time: act.querySelector('.activity-time').value,
+                        title: act.querySelector('.activity-title').value,
+                        location: act.querySelector('.activity-location').value,
+                        description: act.querySelector('.activity-info').value,
+                        duration_minutes: 60
+                    })
+                })
+                days.push({
+                    day_number: idx + 1,
+                    date: card.querySelector('.day-date').value,
+                    title: card.querySelector('.day-title').value,
+                    activities: activities
+                })
+            })
+
+            const plan = {
+                destination: document.getElementById('destination').value,
+                summary: '',
+                days: days
+            }
+
+            document.getElementById('plan-json').value = JSON.stringify(plan)
+            
+            fetch('{{ url_for("main.edit_itinerary", id=itinerary.id) }}', {
+                method: 'POST',
+                body: new FormData(form)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success){
+                    window.location.href = '{{ url_for("main.trip_details", id=itinerary.id) }}'
+                }
+            })
+        })
+    })
+</script>
+
+{% endblock %}

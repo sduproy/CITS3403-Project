@@ -6,9 +6,17 @@
 <section class="tp-section">
   <div class="container" style="max-width:760px;">
 
-    <div class="tp-dashboard-header">
-      <h2>My Itineraries</h2>
-      <p class="tp-text-muted mb-0">Welcome back, {{ current_user.username }}.</p>
+    <div class="tp-dashboard-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h2 class="mb-1">My Itineraries</h2>
+        <p class="tp-text-muted mb-0">Welcome back, {{ current_user.username }}.</p>
+      </div>
+      {# Always-visible primary CTA — previously this only appeared
+         inside the empty-state block, so it vanished as soon as the
+         user created their first trip. #}
+      <a href="{{ url_for('main.index') }}#trip-form" class="btn btn-tp-primary">
+        <i class="bi bi-magic"></i> Plan a New Trip
+      </a>
     </div>
 
     {% if itineraries %}
@@ -22,12 +30,13 @@
               {{ delete_form.hidden_tag() }}
               <button type="submit" class="btn btn-tp-dark">Delete</button>
             </form>
-            <form method="POST" action="{{ url_for('main.toggle_public', id=itinerary['id'] )}}">
+            <form method="POST" action="{{ url_for('main.toggle_public', id=itinerary['id'] )}}" class="toggle-form">
               {{ toggle_form.hidden_tag() }}
-              <button type="submit" class="btn btn-tp-secondary">
+              <button type="submit" class="btn btn-tp-secondary toggle-btn">
                 {{ "Make Private" if itinerary['is_public'] else "Make Public" }}
               </button>
             </form>
+            <div class="toggle-msg" style="display:none; color:green; font-size:0.85rem;"></div>
           </div>
         </div>
       {% endfor %}
@@ -42,4 +51,35 @@
 
   </div>
 </section>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.toggle-form').forEach(function(form){
+      let msgTimeout
+      form.addEventListener('submit', function(e){
+          e.preventDefault()
+          fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form)
+          })
+          .then(response => response.json())
+          .then(data => {
+              // update the button text based on data.is_public
+              if(data.is_public){
+                form.querySelector('.toggle-btn').textContent  = "Make Private"
+              }
+              else{
+                form.querySelector('.toggle-btn').textContent  = "Make Public"
+              }
+              const msg = form.nextElementSibling
+              msg.textContent = data.is_public ? 'Made public — others can see it on the community page.' : 'Made private — only you can see it.'
+              msg.style.display = 'block'
+              clearTimeout(msgTimeout)
+              msgTimeout = setTimeout(() => { msg.style.display = 'none' }, 3000)
+          })
+      })
+    })
+  })
+</script>
 {% endblock %}

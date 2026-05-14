@@ -1,8 +1,73 @@
 {% extends "base.html" %}
 {% block title %}Trip Detail · SmartVoyage{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+<style>
+  #osm-map {
+    height: 600px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  .tp-map-sticky { position: sticky; top: 80px; }
+  .tp-time-block { transition: background 0.2s ease; }
+  .tp-time-block.active {
+    background: rgba(31, 138, 138, 0.12);
+    border-radius: 10px;
+    box-shadow: inset 3px 0 0 var(--tp-teal, #1f8a8a);
+  }
+  .tp-time-block.active .tp-time-content {
+    font-weight: 600;
+  }
+  /* Active marker glow — Leaflet renders circleMarker as an <svg><path>,
+     so we apply a CSS class to the path element via marker._path. */
+  .tp-marker-active {
+    filter: drop-shadow(0 0 6px rgba(255, 196, 0, 0.95))
+            drop-shadow(0 0 14px rgba(255, 196, 0, 0.55));
+  }
+  /* Pulsing ring drawn as a separate circleMarker behind the active one. */
+  .tp-pulse-ring {
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: tp-pulse 1.4s ease-out infinite;
+  }
+  @keyframes tp-pulse {
+    0%   { transform: scale(0.6); opacity: 0.85; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+  .tp-map-status {
+    font-size: 0.8rem;
+    color: var(--tp-text-muted, #6c757d);
+    margin-top: 0.5rem;
+  }
+  .tp-day-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.8rem;
+  }
+  .tp-day-legend .swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<div class="container" style="max-width:900px;">
+<div class="container" style="max-width:1200px;">
 
   <h1 class="mt-4">{{ itinerary.destination }}</h1>
   <p class="tp-text-muted">
@@ -27,47 +92,48 @@
       <button type="button" onclick="window.print()" class="btn-tp-secondary">
         <i class="bi bi-printer"></i> Print itinerary
       </button>
+      {% if itinerary.user_id == current_user.id %}
+        <a href="{{ url_for('main.edit_itinerary', id=itinerary.id) }}" class="btn btn-tp-secondary">Edit</a>
+      {% endif %}
     </div>
 
-    {% for day in plan.days %}
-      <div class="tp-itinerary-day" id="day-{{ day.day_number }}">
-        <div class="tp-day-label">
-          Day {{ day.day_number }} &mdash; {{ day.title }}
-          <span class="tp-text-muted" style="font-weight:400; font-size:0.85rem;">
-            ({{ day.date }})
-          </span>
-        </div>
-
-        {% for activity in day.activities %}
-          <div class="tp-time-block">
-            <div class="tp-time-label">{{ activity.time }}</div>
-            <div class="tp-time-content"
-                 data-title="{{ activity.title }}"
-                 data-info="{{ activity.description }} · {{ activity.location }} · ~{{ activity.duration_minutes }} min"
-                 data-location="{{ activity.location }}"
-                 style="cursor:pointer">
-              {{ activity.title }}
-              <span class="tp-text-muted" style="font-size:0.85rem; margin-left:0.5rem;">
-                @ {{ activity.location }}
+    <div class="row g-4">
+      {# Left column: day-by-day activity list #}
+      <div class="col-lg-5">
+        {% for day in plan.days %}
+          <div class="tp-itinerary-day" id="day-{{ day.day_number }}">
+            <div class="tp-day-label">
+              Day {{ day.day_number }} &mdash; {{ day.title }}
+              <span class="tp-text-muted" style="font-weight:400; font-size:0.85rem;">
+                ({{ day.date }})
               </span>
             </div>
+
+            {% for activity in day.activities %}
+              <div class="tp-time-block" data-day="{{ day.day_number }}" data-activity-index="{{ loop.index0 }}">
+                <div class="tp-time-label">{{ activity.time }}</div>
+                <div class="tp-time-content"
+                     data-title="{{ activity.title }}"
+                     data-info="{{ activity.description }} · {{ activity.location }} · ~{{ activity.duration_minutes }} min"
+                     data-location="{{ activity.location }}"
+                     style="cursor:pointer">
+                  {{ activity.title }}
+                  <span class="tp-text-muted" style="font-size:0.85rem; margin-left:0.5rem;">
+                    @ {{ activity.location }}
+                  </span>
+                </div>
+              </div>
+            {% endfor %}
           </div>
         {% endfor %}
       </div>
-    {% endfor %}
 
-    {# Modal for clicked activities — populated by the script below. #}
-    <div class="modal fade" id="activityModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalTitle"></h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <p id="modalInfo"></p>
-            <a id="modalMapLink" href="#" target="_blank" class="btn-tp-secondary">View on Google Maps</a>
-          </div>
+      {# Right column: OpenStreetMap (sticky on desktop) #}
+      <div class="col-lg-7">
+        <div class="tp-map-sticky">
+          <div id="day-legend" class="tp-day-legend"></div>
+          <div id="osm-map"></div>
+          <p id="map-status" class="tp-map-status">Loading map…</p>
         </div>
       </div>
     </div>
@@ -200,18 +266,322 @@
       });
     }
 
-    // Click an activity -> show its description + a Google Maps link
-    // built from the activity location (more accurate than searching
-    // by title).
+    // Click an activity -> highlight its marker on the OSM map and pan
+    // to it. The old Bootstrap modal was removed because its dark
+    // backdrop covered the whole page (which read as a "black screen").
+    // The marker popup now carries the same info plus a Google Maps link.
+    let activeBlock = null;
+    let activePulse = null;
+
+    function deactivate() {
+      if (activeBlock) activeBlock.classList.remove('active');
+      if (activePulse) {
+        window._tpMap.removeLayer(activePulse);
+        activePulse = null;
+      }
+      Object.values(window._tpMarkers || {}).forEach(function(m) {
+        if (m._path) m._path.classList.remove('tp-marker-active');
+        m.setStyle({ radius: 9, weight: 2 });
+      });
+      activeBlock = null;
+    }
+
+    function activate(marker, block) {
+      deactivate();
+
+      marker.setStyle({ radius: 14, weight: 3 });
+      marker.bringToFront();
+      if (marker._path) marker._path.classList.add('tp-marker-active');
+
+      // Pulsing ring behind the active marker for extra visibility.
+      activePulse = L.circleMarker(marker.getLatLng(), {
+        radius: 22,
+        fillColor: marker.options.fillColor,
+        color: marker.options.fillColor,
+        weight: 0,
+        fillOpacity: 0.35,
+        interactive: false,
+        className: 'tp-pulse-ring'
+      }).addTo(window._tpMap);
+      activePulse.bringToBack();
+
+      if (block) {
+        block.classList.add('active');
+        activeBlock = block;
+      }
+    }
+
     document.querySelectorAll('.tp-time-content').forEach(function(activity) {
       activity.addEventListener('click', function() {
-        document.getElementById('modalTitle').innerText = activity.dataset.title;
-        document.getElementById('modalInfo').innerText = activity.dataset.info;
-        const q = encodeURIComponent(activity.dataset.location || activity.dataset.title);
-        document.getElementById('modalMapLink').href = 'https://www.google.com/maps/search/' + q;
-        new bootstrap.Modal(document.getElementById('activityModal')).show();
+        const block = activity.closest('.tp-time-block');
+        const key = block.dataset.day + ':' + block.dataset.activityIndex;
+        const marker = window._tpMarkers && window._tpMarkers[key];
+        if (!marker) {
+          // Geocoding hasn't finished (or failed) for this one yet.
+          block.classList.add('active');
+          activeBlock = block;
+          document.getElementById('map-status').innerText =
+            'Still locating "' + activity.dataset.location + '"…';
+          return;
+        }
+        window._tpMap.flyTo(marker.getLatLng(), 16, { duration: 0.7 });
+        activate(marker, block);
+        marker.openPopup();
       });
     });
+
+    // ---------- OpenStreetMap (Leaflet + Nominatim) ----------
+
+    const destination = {{ itinerary.destination | tojson }};
+    const activities = [
+      {% for day in plan.days %}
+        {% for activity in day.activities %}
+        {
+          day: {{ day.day_number }},
+          index: {{ loop.index0 }},
+          time: {{ activity.time | tojson }},
+          title: {{ activity.title | tojson }},
+          location: {{ activity.location | tojson }},
+          description: {{ activity.description | tojson }},
+          duration: {{ activity.duration_minutes | tojson }}
+        },
+        {% endfor %}
+      {% endfor %}
+    ];
+
+    const dayColors = ['#1f8a8a', '#e76f51', '#f4a261', '#8a5cf6', '#2a9d8f', '#e63946', '#457b9d'];
+
+    const map = L.map('osm-map');
+    window._tpMap = map;
+    window._tpMarkers = {};
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    }).addTo(map);
+
+    map.setView([20, 0], 2);
+
+    // Clicking blank map area clears any active highlight.
+    map.on('click', function() { deactivate(); });
+
+    const statusEl = document.getElementById('map-status');
+    const legendEl = document.getElementById('day-legend');
+
+    // Build the day-colour legend from the day numbers actually present.
+    const uniqueDays = [...new Set(activities.map(a => a.day))].sort((a, b) => a - b);
+    legendEl.innerHTML = uniqueDays.map(d =>
+      `<span><span class="swatch" style="background:${dayColors[(d - 1) % dayColors.length]}"></span>Day ${d}</span>`
+    ).join('');
+
+    // In-memory geocode cache so repeated location strings (e.g. the same
+    // hotel across days) cost one request, not N.
+    const geocodeCache = {};
+
+    async function nominatimSearch(params) {
+      const url = `https://nominatim.openstreetmap.org/search?${params.toString()}`;
+      try {
+        const r = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        if (!r.ok) return [];
+        return await r.json();
+      } catch (e) {
+        return [];
+      }
+    }
+
+    // First call: also pull the destination's country code + bounding box,
+    // which we'll use to bias every subsequent activity query so e.g.
+    // "Central Park" doesn't resolve to Manhattan when the trip is in Perth.
+    async function geocodeDestination(query) {
+      if (geocodeCache[query]) return geocodeCache[query];
+      const params = new URLSearchParams({
+        q: query, format: 'json', limit: '1', addressdetails: '1'
+      });
+      const data = await nominatimSearch(params);
+      if (!data.length) { geocodeCache[query] = null; return null; }
+      const r = data[0];
+      const info = {
+        coords: [parseFloat(r.lat), parseFloat(r.lon)],
+        countryCode: r.address && r.address.country_code,
+        // Nominatim returns boundingbox as [south, north, west, east] strings.
+        boundingBox: (r.boundingbox || []).map(parseFloat)
+      };
+      geocodeCache[query] = info;
+      return info;
+    }
+
+    // Geocode an activity location with country + viewbox bias toward the
+    // destination, then pick the result *closest* to the destination centre
+    // (not just Nominatim's top hit, which can be a same-named place
+    // elsewhere). Reject results that are clearly too far away.
+    async function geocodeNearby(query, destInfo) {
+      if (geocodeCache[query]) return geocodeCache[query];
+      const params = new URLSearchParams({
+        q: query, format: 'json', limit: '5'
+      });
+      if (destInfo) {
+        if (destInfo.countryCode) params.set('countrycodes', destInfo.countryCode);
+        if (destInfo.boundingBox && destInfo.boundingBox.length === 4) {
+          const [s, n, w, e] = destInfo.boundingBox;
+          // Pad the box so just-outside neighbourhoods aren't rejected by
+          // ranking. viewbox format is lon_left,lat_top,lon_right,lat_bottom.
+          const padLat = Math.max((n - s) * 0.8, 0.3);
+          const padLon = Math.max((e - w) * 0.8, 0.3);
+          params.set('viewbox', `${w - padLon},${n + padLat},${e + padLon},${s - padLat}`);
+        }
+      }
+      const data = await nominatimSearch(params);
+      if (!data.length) { geocodeCache[query] = null; return null; }
+
+      let best = null, bestDist = Infinity;
+      for (const r of data) {
+        const lat = parseFloat(r.lat);
+        const lon = parseFloat(r.lon);
+        if (destInfo && destInfo.coords) {
+          const d = Math.hypot(lat - destInfo.coords[0], lon - destInfo.coords[1]);
+          if (d < bestDist) { bestDist = d; best = [lat, lon]; }
+        } else if (!best) {
+          best = [lat, lon];
+        }
+      }
+
+      // Sanity reject — anything > ~3° (≈330 km) from the destination centre
+      // is almost certainly the wrong "Central Park"-style match.
+      if (destInfo && bestDist > 3) { geocodeCache[query] = null; return null; }
+
+      geocodeCache[query] = best;
+      return best;
+    }
+
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const bounds = L.latLngBounds();
+
+    async function loadMap() {
+      statusEl.innerText = 'Locating destination…';
+      const destInfo = await geocodeDestination(destination);
+      if (destInfo) {
+        map.setView(destInfo.coords, 12);
+        bounds.extend(destInfo.coords);
+      }
+
+      let exact = 0, approx = 0;
+      for (let i = 0; i < activities.length; i++) {
+        const a = activities[i];
+        if (i > 0 || destInfo) await sleep(1100);
+        statusEl.innerText = `Locating ${i + 1}/${activities.length}: ${a.location}…`;
+
+        // Cascade: full → bare → cleaned. Each new variant costs another
+        // Nominatim request, so only do the next if the previous missed.
+        let coords = await geocodeNearby(`${a.location}, ${destination}`, destInfo);
+
+        if (!coords && destInfo) {
+          await sleep(1100);
+          coords = await geocodeNearby(a.location, destInfo);
+        }
+
+        if (!coords && destInfo) {
+          // Strip parenthetical/comma suffixes and common filler words.
+          const cleaned = a.location
+            .split(/[,(]/)[0]
+            .replace(/\b(the|a|an)\b/gi, '')
+            .trim();
+          if (cleaned.length > 2 && cleaned.toLowerCase() !== a.location.toLowerCase()) {
+            await sleep(1100);
+            coords = await geocodeNearby(`${cleaned}, ${destination}`, destInfo);
+          }
+        }
+
+        let isApprox = false;
+        if (!coords && destInfo) {
+          // Last resort: drop an "approximate" marker around the destination
+          // centre, spaced apart so multiple unlocated activities don't pile
+          // on the same pixel. Visually distinct (amber dashed border, low
+          // opacity) so the user can see the activity exists but knows the
+          // coordinates aren't pinpointed.
+          const angle = ((i * 137.5) % 360) * Math.PI / 180; // golden angle
+          const radius = 0.008 + 0.004 * (i % 3);            // ~0.8–2 km
+          coords = [
+            destInfo.coords[0] + radius * Math.sin(angle),
+            destInfo.coords[1] + radius * Math.cos(angle)
+          ];
+          isApprox = true;
+        }
+
+        if (!coords) continue;
+
+        const colour = dayColors[(a.day - 1) % dayColors.length];
+        const marker = L.circleMarker(coords, {
+          radius: isApprox ? 8 : 9,
+          fillColor: colour,
+          color: isApprox ? '#ffc107' : '#ffffff',
+          weight: isApprox ? 2 : 2,
+          opacity: 1,
+          fillOpacity: isApprox ? 0.4 : 0.95,
+          dashArray: isApprox ? '3 3' : null
+        }).addTo(map);
+
+        const escape = (s) => String(s == null ? '' : s)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const gmapsHref = 'https://www.google.com/maps/search/' +
+          encodeURIComponent(`${a.location}, ${destination}`);
+        const approxNote = isApprox
+          ? '<div style="background:#fff8e1; border-left:3px solid #ffc107; padding:5px 7px; font-size:0.78em; margin-bottom:6px; border-radius:2px"><b>Approximate</b> — couldn\'t pinpoint this place. Use the Google Maps link below for the exact spot.</div>'
+          : '';
+        marker.bindPopup(
+          `<div style="min-width:200px; max-width:260px">
+             <div style="font-weight:700; color:${colour}">Day ${a.day} · ${a.time}</div>
+             <div style="font-weight:600; margin:2px 0">${escape(a.title)}</div>
+             <div style="color:#666; font-size:0.85em; margin-bottom:6px">${escape(a.location)} · ~${escape(a.duration)} min</div>
+             ${approxNote}
+             ${a.description ? `<div style="font-size:0.85em; line-height:1.35; margin-bottom:8px">${escape(a.description)}</div>` : ''}
+             <a href="${gmapsHref}" target="_blank" rel="noopener"
+                style="font-size:0.8em">Open in Google Maps &rarr;</a>
+           </div>`
+        );
+
+        window._tpMarkers[`${a.day}:${a.index}`] = marker;
+
+        // Clicking a marker should also highlight its row in the list,
+        // and scroll the row into view if it's off-screen.
+        marker.on('click', function() {
+          const block = document.querySelector(
+            `.tp-time-block[data-day="${a.day}"][data-activity-index="${a.index}"]`
+          );
+          if (block) {
+            activate(marker, block);
+            const dayPanel = document.getElementById('day-' + a.day);
+            if (dayPanel && dayPanel.style.display === 'none') {
+              dayPanel.style.display = '';
+            }
+            block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        });
+
+        bounds.extend(coords);
+        if (isApprox) approx += 1; else exact += 1;
+        statusEl.innerText = approx
+          ? `Placed ${exact} exact + ${approx} approximate of ${activities.length}…`
+          : `Placed ${exact}/${activities.length} locations…`;
+
+        if ((exact + approx) === 1 && !destInfo) {
+          map.setView(coords, 13);
+        }
+      }
+
+      const total = exact + approx;
+      if (total > 0) {
+        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+        statusEl.innerText = approx === 0
+          ? `Showing all ${exact} locations.`
+          : `Showing ${exact} exact + ${approx} approximate (amber-dashed) locations.`;
+      } else if (!destInfo) {
+        statusEl.innerText = `Couldn't locate "${destination}" on the map.`;
+      } else {
+        statusEl.innerText = `Couldn't place any activity locations.`;
+      }
+    }
+
+    loadMap();
   });
 </script>
 {% endif %}
