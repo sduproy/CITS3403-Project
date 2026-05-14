@@ -27,7 +27,15 @@ pattern applies uniformly.
 """
 
 from flask_wtf import FlaskForm
-from datetime import datetime
+from datetime import datetime, timedelta
+
+
+# Cap on how long an AI-generated trip can span. Gemini's response budget
+# (~8k structured-output tokens) caps the day-by-day plan it can produce
+# in one call at roughly this range; longer trips truncate or fail
+# validation. 92 days covers any 3 consecutive calendar months
+# (the longest 3-month stretch — Jul/Aug/Oct etc — is 92 days).
+MAX_TRIP_DURATION = timedelta(days=92)
 
 from wtforms import (
     BooleanField,
@@ -135,9 +143,18 @@ class NewItineraryForm(FlaskForm):
     submit = SubmitField("Plan trip")
 
     def validate_leave_at(self, field):
-        """Cross-field check: leave must be after arrive (compared as full
-        datetimes, not just times — leaving at 09:00 the next day is fine
-        even though the time-of-day is earlier than arrival)."""
+        """Cross-field checks on the arrive/leave pair.
+
+        1. Leave must be strictly after arrive, compared as full
+           datetimes (leaving at 09:00 the next day is fine even though
+           the time-of-day is earlier than arrival).
+        2. The total trip duration can't exceed MAX_TRIP_DURATION
+           (~3 months). The AI can't plan a longer itinerary in one
+           call — the response would exceed the model's output budget
+           and the result wouldn't be useful anyway. We reject up
+           front so the user sees a clear error instead of a generic
+           Gemini failure 5–15 seconds later.
+        """
         if not (self.arrive_date.data and self.arrive_at.data and self.leave_date.data and field.data):
             # Some other field failed DataRequired; skip — that error will
             # already be flashed.
@@ -146,6 +163,11 @@ class NewItineraryForm(FlaskForm):
         leave_dt = datetime.combine(self.leave_date.data, field.data)
         if leave_dt <= arrive_dt:
             raise ValidationError("Leave date/time must be after arrive date/time.")
+        if leave_dt - arrive_dt > MAX_TRIP_DURATION:
+            raise ValidationError(
+                "Trip too long — please pick dates within 3 months. "
+                "The AI can't plan a longer itinerary in one go."
+            )
 
 
 class DeleteItineraryForm(FlaskForm):
