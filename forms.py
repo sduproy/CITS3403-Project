@@ -31,11 +31,10 @@ from datetime import datetime, timedelta
 
 
 # Cap on how long an AI-generated trip can span. Gemini's response budget
-# (~8k structured-output tokens) caps the day-by-day plan it can produce
-# in one call at roughly this range; longer trips truncate or fail
-# validation. 92 days covers any 3 consecutive calendar months
-# (the longest 3-month stretch — Jul/Aug/Oct etc — is 92 days).
-MAX_TRIP_DURATION = timedelta(days=92)
+# caps the day-by-day plan it can produce in one call; in practice ~25
+# days is the sweet spot before the model starts truncating activities
+# or returning malformed JSON.
+MAX_TRIP_DURATION = timedelta(days=25)
 
 from wtforms import (
     BooleanField,
@@ -149,7 +148,7 @@ class NewItineraryForm(FlaskForm):
            datetimes (leaving at 09:00 the next day is fine even though
            the time-of-day is earlier than arrival).
         2. The total trip duration can't exceed MAX_TRIP_DURATION
-           (~3 months). The AI can't plan a longer itinerary in one
+           (25 days). The AI can't plan a longer itinerary in one
            call — the response would exceed the model's output budget
            and the result wouldn't be useful anyway. We reject up
            front so the user sees a clear error instead of a generic
@@ -165,7 +164,7 @@ class NewItineraryForm(FlaskForm):
             raise ValidationError("Leave date/time must be after arrive date/time.")
         if leave_dt - arrive_dt > MAX_TRIP_DURATION:
             raise ValidationError(
-                "Trip too long — please pick dates within 3 months. "
+                f"Trip too long — please pick dates within {MAX_TRIP_DURATION.days} days. "
                 "The AI can't plan a longer itinerary in one go."
             )
 
