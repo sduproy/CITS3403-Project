@@ -21,11 +21,11 @@ from flask import (
     Blueprint,
     abort,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
-    url_for,
-    jsonify,
+    url_for
 )
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy.exc import IntegrityError
@@ -80,6 +80,19 @@ def community():
             user_review = Review.query.filter_by(itinerary_id=itin.id, user_id=current_user.id).first()
         review_data[itin.id] = {"avg": avg, "count": len(reviews), "user_review": user_review}
     return render_template("community.html", itineraries=itineraries, review_data=review_data, review_form=ReviewForm())
+
+
+@main.route("/api/trending")
+def api_trending():
+    """Top public destinations as JSON, for AJAX-driven client-side rendering
+    of the trending chips on the community page. Returns at most 5 entries."""
+    from collections import Counter
+    itineraries = Itinerary.query.filter_by(is_public=1).all()
+    destinations = [i.destination.strip().title() for i in itineraries]
+    top = Counter(destinations).most_common(5)
+    return jsonify({
+        "trending": [{"destination": dest, "count": cnt} for dest, cnt in top]
+    })
 
 
 @main.route("/register", methods=("GET", "POST"))
@@ -238,7 +251,16 @@ def trip_details(id):
             plan = json.loads(itinerary.content)
         except json.JSONDecodeError:
             plan = None
-    return render_template("trip_details.html", itinerary=itinerary, plan=plan)
+    # Pass an empty ReviewForm so trip_details.html can render the review
+    # submission form with a CSRF token via {{ review_form.hidden_tag() }}.
+    # The template only shows the form to logged-in non-owners; Story 4's
+    # server-side check in submit_review is the authoritative defence.
+    return render_template(
+        "trip_details.html",
+        itinerary=itinerary,
+        plan=plan,
+        review_form=ReviewForm(),
+    )
 
 
 @main.route("/itinerary/new", methods=["POST"])
@@ -402,31 +424,46 @@ def user_profile(username):
     return render_template("user_profiles.html", profile_user=user, itineraries=itineraries)
 
 
-#Leaving Reviews
+# Story 4: review submission with self-review prevention.
 @main.route("/itinerary/<int:id>/review", methods=["POST"])
 @login_required
 def submit_review(id):
     form = ReviewForm()
-    if not form.validate_on_submit():
-        flash("Invalid review submission.", "error")
-        return redirect(url_for("main.community"))
     itinerary = db.session.get(Itinerary, id)
     if itinerary is None or not itinerary.is_public:
         flash("Itinerary not found.", "error")
         return redirect(url_for("main.community"))
+    # Story 4 core: a user can't review their own itinerary — keeps
+    # ratings fair. Enforced server-side so a forged POST bypassing
+    # the UI gate is still rejected.
+    if itinerary.user_id == current_user.id:
+        flash("You can't review your own itinerary.", "error")
+        return redirect(url_for("main.trip_details", id=id))
+    if not form.validate_on_submit():
+        for field_errors in form.errors.values():
+            for msg in field_errors:
+                flash(msg, "error")
+                break
+        return redirect(url_for("main.trip_details", id=id))
+    # Upsert: one review per (itinerary, user) pair (DB-enforced by the
+    # UniqueConstraint on the Review model). If the user has already
+    # reviewed, update; otherwise insert.
     existing = Review.query.filter_by(itinerary_id=id, user_id=current_user.id).first()
     if existing:
         existing.rating = form.rating.data
         existing.comment = form.comment.data
+        flash("Your review was updated.", "success")
     else:
-        db.session.add(Review(itinerary_id=id, user_id=current_user.id, rating=form.rating.data, comment=form.comment.data))
+        db.session.add(Review(
+            itinerary_id=id,
+            user_id=current_user.id,
+            rating=form.rating.data,
+            comment=form.comment.data,
+        ))
+        flash("Review submitted!", "success")
     db.session.commit()
-    flash("Review submitted!", "success")
-    return redirect(url_for("main.community"))
-
-
-
-
+    return redirect(url_for("main.trip_details", id=id))
+  
 
 @main.route("/itinerary/<int:id>/json")
 @login_required
