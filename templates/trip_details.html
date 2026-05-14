@@ -150,39 +150,11 @@
   {% endif %}
 
   {# Reviews section — visible to anyone who can see this itinerary
-     (i.e. the public-or-owner-or-admin check in the route already passed). #}
+     (i.e. the public-or-owner-or-admin check in the route already passed).
+     Story 4 will add the review-submission form here; for now this is
+     read-only. #}
   <section class="mt-5 mb-4">
     <h3 style="font-family: var(--tp-font-display);">Reviews</h3>
-
-    {# Story 4: review submission form for logged-in non-owners only.
-       The route enforces the same rule server-side, so a forged POST
-       bypassing this UI gate is still rejected. #}
-    {% if current_user.is_authenticated and itinerary.user_id != current_user.id %}
-      {% set my_review = itinerary.reviews|selectattr('user_id', 'equalto', current_user.id)|first %}
-      <div class="tp-review mb-4" style="background: var(--tp-white); border: 1px solid var(--tp-gray-200);">
-        <h5 style="font-size: 0.95rem; margin-bottom: 0.75rem;">
-          {{ "Update your review" if my_review else "Leave a review" }}
-        </h5>
-        <form method="POST" action="{{ url_for('main.submit_review', id=itinerary.id) }}">
-          {{ review_form.hidden_tag() }}
-          <div class="mb-2">
-            <label for="reviewRating" class="form-label" style="font-size:0.85rem;">Rating (1-5)</label>
-            <input id="reviewRating" type="number" name="rating" min="1" max="5"
-                   class="form-control tp-input"
-                   value="{{ my_review.rating if my_review else '' }}" required>
-          </div>
-          <div class="mb-2">
-            <label for="reviewComment" class="form-label" style="font-size:0.85rem;">Comment (optional, max 500 chars)</label>
-            <textarea id="reviewComment" name="comment" class="form-control tp-input" rows="2"
-                      maxlength="500">{{ my_review.comment if my_review else '' }}</textarea>
-          </div>
-          <button type="submit" class="btn btn-tp-primary btn-sm">
-            {{ "Update Review" if my_review else "Submit Review" }}
-          </button>
-        </form>
-      </div>
-    {% endif %}
-
     {% set sorted_reviews = itinerary.reviews|sort(attribute='created_at', reverse=true) %}
     {% if sorted_reviews %}
       {% for review in sorted_reviews %}

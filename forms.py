@@ -32,21 +32,21 @@ from datetime import datetime
 from wtforms import (
     BooleanField,
     DateField,
-    IntegerField,
     PasswordField,
     StringField,
     SubmitField,
-    TextAreaField,
-    TimeField
+    TimeField,
+    IntegerField,
+    TextAreaField
 )
 from wtforms.validators import (
     DataRequired,
     Email,
     Length,
-    NumberRange,
-    Optional,
     Regexp,
-    ValidationError
+    ValidationError,
+    NumberRange,
+    Optional
 )
 
 
@@ -153,34 +153,33 @@ class DeleteItineraryForm(FlaskForm):
     CSRF token via ``{{ delete_form.hidden_tag() }}`` and the route can call
     ``form.validate_on_submit()``."""
 
-
 class TogglePublicForm(FlaskForm):
     """Empty for for CSRF protection on the public/private toggle."""
-
 
 class DeleteUserForm(FlaskForm):
     """Empty form for CSRF protection on admin user deletion."""
 
-
 class AdminDeleteItineraryForm(FlaskForm):
     """Empty form for CSRF protection on admin itinerary deletion."""
 
+class ManualItineraryForm(FlaskForm):
+    """No data fields — exists purely so the edit itinerary form gets a
+    CSRF token via ``{{ form.hidden_tag() }}``."""
+
+class EditItineraryForm(FlaskForm):
+    """No data fields — exists purely so the edit itinerary form gets a
+    CSRF token via ``{{ form.hidden_tag() }}``."""
 
 class ReviewForm(FlaskForm):
-    """Review submission form. Rating 1-5 required, comment optional."""
-
     rating = IntegerField(
         "Rating",
         validators=[
-            DataRequired(message="Please choose a rating."),
+            DataRequired(message="Please select a rating."),
             NumberRange(min=1, max=5, message="Rating must be between 1 and 5."),
         ],
     )
-    comment = TextAreaField(
-        "Comment",
-        validators=[
-            Optional(),
-            Length(max=500, message="Comment is too long (max 500 characters)."),
-        ],
-    )
+    comment = TextAreaField("Comment", validators=[Optional(), Length(max=500)])
     submit = SubmitField("Submit Review")
+
+class AdminDeleteReviewForm(FlaskForm):
+    """Empty form for CSRF protection on admin review deletion."""
