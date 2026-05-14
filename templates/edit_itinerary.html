@@ -208,6 +208,26 @@
                 days: days
             }
 
+            if(days.length === 0){
+                alert('Please add at least one day.')
+                return
+            }
+            for(let day of days){
+                if(day.activities.length === 0){
+                    alert('Each day must have at least one activity.')
+                    return
+                }
+            }
+
+            const allInputs = document.querySelectorAll('#days-container input:not([type="hidden"])')
+            for(let input of allInputs){
+                if(!input.value.trim()){
+                    alert('Please fill out all fields.')
+                    input.focus()
+                    return
+                }
+            }
+
             document.getElementById('plan-json').value = JSON.stringify(plan)
             
             fetch('{{ url_for("main.edit_itinerary", id=itinerary.id) }}', {
