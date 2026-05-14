@@ -330,7 +330,7 @@ def admin_delete_itinerary(id):
         db.session.delete(itinerary)
         db.session.commit()
         flash("Itinerary deleted.", "success")
-    return redirect(url_for("main.admin_dashboard"))
+    return jsonify({'success': True})
 
 #admin access to deleting user accounts
 @main.route("/admin/user/<int:id>/delete", methods=["POST"])
@@ -348,7 +348,7 @@ def admin_delete_user(id):
         db.session.delete(user)
         db.session.commit()
         flash(f"User {user.username} deleted.", "success")
-    return redirect(url_for("main.admin_dashboard"))
+    return jsonify({'success': True})
 
 #admin access for deleting reviews
 @main.route("/admin/review/<int:id>/delete", methods=["POST"])
@@ -363,7 +363,7 @@ def admin_delete_review(id):
         db.session.delete(review)
         db.session.commit()
         flash("Review deleted.", "success")
-    return redirect(url_for("main.admin_dashboard"))
+    return jsonify({'success': True})
 
 
 @main.route("/manual_itinerary", methods=["GET", "POST"])
