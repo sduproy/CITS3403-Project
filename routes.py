@@ -402,32 +402,6 @@ def user_profile(username):
     return render_template("user_profiles.html", profile_user=user, itineraries=itineraries)
 
 
-#Leaving Reviews
-@main.route("/itinerary/<int:id>/review", methods=["POST"])
-@login_required
-def submit_review(id):
-    form = ReviewForm()
-    if not form.validate_on_submit():
-        flash("Invalid review submission.", "error")
-        return redirect(url_for("main.community"))
-    itinerary = db.session.get(Itinerary, id)
-    if itinerary is None or not itinerary.is_public:
-        flash("Itinerary not found.", "error")
-        return redirect(url_for("main.community"))
-    existing = Review.query.filter_by(itinerary_id=id, user_id=current_user.id).first()
-    if existing:
-        existing.rating = form.rating.data
-        existing.comment = form.comment.data
-    else:
-        db.session.add(Review(itinerary_id=id, user_id=current_user.id, rating=form.rating.data, comment=form.comment.data))
-    db.session.commit()
-    flash("Review submitted!", "success")
-    return redirect(url_for("main.community"))
-
-
-
-
-
 @main.route("/itinerary/<int:id>/json")
 @login_required
 def itinerary_json(id):
