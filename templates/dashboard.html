@@ -83,6 +83,7 @@
     document.querySelectorAll('.delete-form').forEach(function(form){
       form.addEventListener('submit', function(e){
         e.preventDefault()
+        if(!confirm('Are you sure you want to delete this itinerary?')) return
         const card = form.closest('.tp-card')
         card.style.display = 'none'
         const undoBar = document.createElement('div')
