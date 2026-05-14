@@ -301,7 +301,7 @@ def delete_itinerary(id):
         db.session.delete(itinerary)
         db.session.commit()
     flash("Itinerary deleted.", "success")
-    return redirect(url_for("main.dashboard"))
+    return jsonify({'success': True})
 
 #toggling itineraries to public and private
 @main.route("/itinerary/<int:id>/toggle_public", methods=["POST"])
