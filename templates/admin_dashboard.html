@@ -41,7 +41,7 @@
     <h4 class="mb-3" style="font-family:var(--tp-font-display);">All Itineraries</h4>
     {% if itineraries %}
       {% for itinerary in itineraries %}
-      <div class="tp-trip-row">
+      <div class="tp-trip-row" data-username="{{ itinerary.user.username }}">
           <div class="d-flex align-items-center gap-2">
             <div class="tp-avatar">{{ itinerary.user.username[0].upper() }}</div>
             <div>
@@ -64,7 +64,7 @@
               <span class="tp-badge-private">Private</span>
             {% endif %}
             <a href="{{ url_for('main.trip_details', id=itinerary.id) }}" class="btn btn-sm btn-tp-secondary">View</a>
-            <form method="POST" action="{{ url_for('main.admin_delete_itinerary', id=itinerary.id) }}" onsubmit="return confirm('Delete this itinerary?')">
+            <form method="POST" action="{{ url_for('main.admin_delete_itinerary', id=itinerary.id) }}" class="delete-itin">
               {{ delete_itinerary_form.hidden_tag() }}
               <button type="submit" class="btn btn-sm btn-tp-dark">Delete</button>
             </form>
@@ -90,7 +90,7 @@
               <span class="tp-text-muted ms-2" style="font-size:0.85rem">{{ user.email }}</span>
             </div>
           </div>
-          <form method="POST" action="{{ url_for('main.admin_delete_user', id=user.id) }}" onsubmit="return confirm('Delete user {{ user.username }} and all their data')">
+          <form method="POST" action="{{ url_for('main.admin_delete_user', id=user.id) }}" class="delete-user">
             {{ delete_user_form.hidden_tag() }}
             <button type="submit" class="btn btn-sm btn-tp-dark">Delete User</button>
           </form>
@@ -113,7 +113,7 @@
             </span>
           </div>
         </div>
-        <form method="POST" action="{{ url_for('main.admin_delete_review', id=review.id) }}" onsubmit="return confirm('Delete this review?')">
+        <form method="POST" action="{{ url_for('main.admin_delete_review', id=review.id) }}" class="delete-review">
           {{ delete_review_form.hidden_tag() }}
           <button type="submit" class="btn btn-sm btn-tp-dark">Delete</button>
         </form>
@@ -126,4 +126,51 @@
 
   </div>
 </section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    function DeleteUndo(formclass, msg, confirmMsg){
+    document.querySelectorAll(formclass).forEach(function(form){
+      form.addEventListener('submit', function(e){
+          e.preventDefault()
+          const card = form.closest('.tp-trip-row')
+          const username = card.querySelector('strong').textContent
+          let confirmMessage = confirmMsg
+          if(formclass === '.delete-user'){
+              confirmMessage = `Are you sure you want to delete user ${username} and all their data?`
+          }
+          if(!confirm(confirmMessage)) return
+          card.style.display = 'none'
+          const undoBar = document.createElement('div')
+          undoBar.innerHTML = `
+              <p> ${msg} <button type="button" class="btn btn-tp-secondary undo-btn"> Undo </button></p>
+          `
+          card.parentElement.insertBefore(undoBar, card)
+          const deleteTimeout = setTimeout(function(){
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form)
+            })
+            .then(response => response.json())
+            .then(data => {
+                undoBar.remove()
+                if(formclass === '.delete-user'){
+                  document.querySelectorAll(`[data-username="${username}"]`).forEach(row => row.remove())
+                }
+            })
+          }, 3000)
+
+          undoBar.querySelector('.undo-btn').addEventListener('click', function(){
+            card.style.display = 'block'
+            undoBar.remove()
+            clearTimeout(deleteTimeout)
+          })
+        })
+      })
+    }
+    DeleteUndo('.delete-itin','Itinerary deleted.','Delete this itinerary?')
+    DeleteUndo('.delete-user','User deleted.',' ')
+    DeleteUndo('.delete-review','Review deleted.', 'Delete this review?')
+  })
+</script>
 {% endblock %}
