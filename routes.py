@@ -312,9 +312,10 @@ def toggle_public(id):
         flash("The CSRF token is missing.", "error")
         return redirect(url_for("main.dashboard"))
     itinerary = Itinerary.query.filter_by(id=id, user_id=current_user.id).first()
-    if itinerary is not None:
-        itinerary.is_public = 0 if itinerary.is_public else 1
-        db.session.commit()
+    if itinerary is None:
+        return jsonify({'error': 'Not found'}), 404
+    itinerary.is_public = 0 if itinerary.is_public else 1
+    db.session.commit()
     return jsonify({'is_public': itinerary.is_public})
 
 #admin access to deleting itineraries
@@ -406,8 +407,10 @@ def user_profile(username):
 @login_required
 def itinerary_json(id):
     itinerary = db.session.get(Itinerary, id)
-    is_owner = current_user.is_authenticated and itinerary.user_id == current_user.id
-    if itinerary is None or (not is_owner and current_user.role != "admin"):
+    if itinerary is None:
+        abort(404)
+    is_owner = itinerary.user_id == current_user.id
+    if not is_owner and current_user.role != "admin":
         abort(404)
     else:
         return jsonify({
@@ -426,9 +429,10 @@ def itinerary_json(id):
 def edit_itinerary(id):
     form = EditItineraryForm()
     itinerary = db.session.get(Itinerary, id)
-    is_owner = current_user.is_authenticated and itinerary.user_id == current_user.id
-
-    if itinerary is None or (not is_owner and current_user.role != "admin"):
+    if itinerary is None:
+        abort(404)
+    is_owner = itinerary.user_id == current_user.id
+    if not is_owner:
         abort(404)
 
     if form.validate_on_submit():
