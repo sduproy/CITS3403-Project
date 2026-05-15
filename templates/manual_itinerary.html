@@ -94,7 +94,7 @@
                 <input type="time" class="activity-time form-control tp-input">
                 <input type="text" class="activity-title form-control tp-input" placeholder="Activity title">
                 <input type="text" class="activity-location form-control tp-input" placeholder="Activity location">
-                <input type="text" class="activity-info form-control tp-input" placeholder="Extra information">
+                <input type="text" class="activity-info form-control tp-input" placeholder="Activity information">
                 <button type="button" class="remove-act-btn btn btn-tp-dark">Remove Activity</button>
             </div>
             `
@@ -110,6 +110,7 @@
     form = document.getElementById('manual-form')
 
     form.addEventListener('submit', function(e){
+        e.preventDefault()
         const days = []
 
         document.querySelectorAll('.tp-card').forEach(function(card, idx){
@@ -139,7 +140,28 @@
             days: days
         }
 
+        if(days.length === 0){
+            alert('Please add at least one day.')
+            return
+        }
+        for(let day of days){
+            if(day.activities.length === 0){
+                alert('Each day must have at least one activity.')
+                return
+            }
+        }
+
+        const emptyInputs = form.querySelectorAll('input:not([type="hidden"]):not([name="csrf_token"])')
+        for(let input of emptyInputs){
+            if(!input.value.trim()){
+                alert('Please fill out all fields.')
+                input.focus()
+                return
+            }
+        }
+
         document.getElementById('plan-json').value = JSON.stringify(plan)
+        form.submit()
 
     })
 </script>

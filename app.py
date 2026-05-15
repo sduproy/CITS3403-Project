@@ -22,6 +22,7 @@ from flask import Flask
 load_dotenv()
 
 import db as db_module
+import seed_community
 from extensions import db, login, migrate
 import models  # noqa: F401 — registers models with SQLAlchemy at import time
 from config import DeploymentConfig
@@ -54,6 +55,10 @@ def create_app(config_class=DeploymentConfig):
     # upgrade / downgrade`` work from the CLI.
     migrate.init_app(app, db)
     login.init_app(app)
+    # Register the `flask seed-community` CLI command — same idempotent
+    # pattern as db.init_app: it only attaches the command, no I/O
+    # happens until the user runs it.
+    seed_community.init_app(app)
     db_module.init_app(app)
 
     # Lazy import — see docstring above for why.

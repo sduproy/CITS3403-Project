@@ -301,7 +301,7 @@ def delete_itinerary(id):
         db.session.delete(itinerary)
         db.session.commit()
     flash("Itinerary deleted.", "success")
-    return redirect(url_for("main.dashboard"))
+    return jsonify({'success': True})
 
 #toggling itineraries to public and private
 @main.route("/itinerary/<int:id>/toggle_public", methods=["POST"])
@@ -402,32 +402,6 @@ def user_profile(username):
     return render_template("user_profiles.html", profile_user=user, itineraries=itineraries)
 
 
-#Leaving Reviews
-@main.route("/itinerary/<int:id>/review", methods=["POST"])
-@login_required
-def submit_review(id):
-    form = ReviewForm()
-    if not form.validate_on_submit():
-        flash("Invalid review submission.", "error")
-        return redirect(url_for("main.community"))
-    itinerary = db.session.get(Itinerary, id)
-    if itinerary is None or not itinerary.is_public:
-        flash("Itinerary not found.", "error")
-        return redirect(url_for("main.community"))
-    existing = Review.query.filter_by(itinerary_id=id, user_id=current_user.id).first()
-    if existing:
-        existing.rating = form.rating.data
-        existing.comment = form.comment.data
-    else:
-        db.session.add(Review(itinerary_id=id, user_id=current_user.id, rating=form.rating.data, comment=form.comment.data))
-    db.session.commit()
-    flash("Review submitted!", "success")
-    return redirect(url_for("main.community"))
-
-
-
-
-
 @main.route("/itinerary/<int:id>/json")
 @login_required
 def itinerary_json(id):
@@ -478,3 +452,56 @@ def edit_itinerary(id):
         db.session.commit()
         return jsonify({'success': True})
     return render_template("edit_itinerary.html", form=form, itinerary=itinerary)
+
+
+@main.route("/api/trending")
+def api_trending():
+    """Top public destinations as JSON, for AJAX-driven client-side rendering
+    of the trending chips on the community page. Returns at most 5 entries."""
+    from collections import Counter
+    itineraries = Itinerary.query.filter_by(is_public=1).all()
+    destinations = [i.destination.strip().title() for i in itineraries]
+    top = Counter(destinations).most_common(5)
+    return jsonify({
+        "trending": [{"destination": dest, "count": cnt} for dest, cnt in top]
+    })
+
+# Story 4: review submission with self-review prevention.
+@main.route("/itinerary/<int:id>/review", methods=["POST"])
+@login_required
+def submit_review(id):
+    form = ReviewForm()
+    itinerary = db.session.get(Itinerary, id)
+    if itinerary is None or not itinerary.is_public:
+        flash("Itinerary not found.", "error")
+        return redirect(url_for("main.community"))
+    # Story 4 core: a user can't review their own itinerary — keeps
+    # ratings fair. Enforced server-side so a forged POST bypassing
+    # the UI gate is still rejected.
+    if itinerary.user_id == current_user.id:
+        flash("You can't review your own itinerary.", "error")
+        return redirect(url_for("main.community"))
+    if not form.validate_on_submit():
+        for field_errors in form.errors.values():
+            for msg in field_errors:
+                flash(msg, "error")
+                break
+        return redirect(url_for("main.community"))
+    # Upsert: one review per (itinerary, user) pair (DB-enforced by the
+    # UniqueConstraint on the Review model). If the user has already
+    # reviewed, update; otherwise insert.
+    existing = Review.query.filter_by(itinerary_id=id, user_id=current_user.id).first()
+    if existing:
+        existing.rating = form.rating.data
+        existing.comment = form.comment.data
+        flash("Your review was updated.", "success")
+    else:
+        db.session.add(Review(
+            itinerary_id=id,
+            user_id=current_user.id,
+            rating=form.rating.data,
+            comment=form.comment.data,
+        ))
+        flash("Review submitted!", "success")
+    db.session.commit()
+    return redirect(url_for("main.community"))
