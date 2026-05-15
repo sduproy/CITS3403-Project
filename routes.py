@@ -293,8 +293,7 @@ def delete_itinerary(id):
     form = DeleteItineraryForm()
     if not form.validate_on_submit():
         # CSRF token missing or wrong — refuse the delete.
-        flash("The CSRF token is missing.", "error")
-        return redirect(url_for("main.dashboard"))
+        return jsonify({'error': 'CSRF token missing'}), 400
 
     itinerary = Itinerary.query.filter_by(id=id, user_id=current_user.id).first()
     if itinerary is not None:
@@ -309,12 +308,12 @@ def delete_itinerary(id):
 def toggle_public(id):
     form = TogglePublicForm()
     if not form.validate_on_submit():
-        flash("The CSRF token is missing.", "error")
-        return redirect(url_for("main.dashboard"))
+        return jsonify({'error': 'CSRF token missing'}), 400
     itinerary = Itinerary.query.filter_by(id=id, user_id=current_user.id).first()
-    if itinerary is not None:
-        itinerary.is_public = 0 if itinerary.is_public else 1
-        db.session.commit()
+    if itinerary is None:
+        return jsonify({'error': 'Not found'}), 404
+    itinerary.is_public = 0 if itinerary.is_public else 1
+    db.session.commit()
     return jsonify({'is_public': itinerary.is_public})
 
 #admin access to deleting itineraries
@@ -323,8 +322,7 @@ def toggle_public(id):
 def admin_delete_itinerary(id):
     form = AdminDeleteItineraryForm()
     if not form.validate_on_submit():
-        flash("The CSRF token is missing.", "error")
-        return redirect(url_for("main.admin_dashboard"))
+        return jsonify({'error': 'CSRF token missing'}), 400
     itinerary = db.session.get(Itinerary, id)
     if itinerary is not None:
         db.session.delete(itinerary)
@@ -338,13 +336,11 @@ def admin_delete_itinerary(id):
 def admin_delete_user(id):
     form = DeleteUserForm()
     if not form.validate_on_submit():
-        flash("The CSRF token is missing.", "error")
-        return redirect(url_for("main.admin_dashboard"))
+        return jsonify({'error': 'CSRF token missing'}), 400
     user = db.session.get(User, id)
     if user is not None:
         if user.role == "admin":
-            flash("Cannot delete an admin account.", "error")
-            return redirect(url_for("main.admin_dashboard"))
+            return jsonify({'error': 'Cannot delete an admin account'}), 403
         db.session.delete(user)
         db.session.commit()
         flash(f"User {user.username} deleted.", "success")
@@ -356,8 +352,7 @@ def admin_delete_user(id):
 def admin_delete_review(id):
     form = AdminDeleteReviewForm()
     if not form.validate_on_submit():
-        flash("The CSRF token is missing.", "error")
-        return redirect(url_for("main.admin_dashboard"))
+        return jsonify({'error': 'CSRF token missing'}), 400
     review = db.session.get(Review, id)
     if review is not None:
         db.session.delete(review)
@@ -372,12 +367,16 @@ def manual_itinerary():
     form = ManualItineraryForm()
     if form.validate_on_submit():
         destination = request.form.get("destination", "").strip()
-        arrive_time = datetime.strptime(
-            request.form.get("arrive_date") + " " + request.form.get("arrive_at"), "%Y-%m-%d %H:%M"
-        )
-        leave_time = datetime.strptime(
-            request.form.get("leave_date") + " " + request.form.get("leave_at"), "%Y-%m-%d %H:%M"
-        )
+        try:
+            arrive_time = datetime.strptime(
+                request.form.get("arrive_date") + " " + request.form.get("arrive_at"), "%Y-%m-%d %H:%M"
+            )
+            leave_time = datetime.strptime(
+                request.form.get("leave_date") + " " + request.form.get("leave_at"), "%Y-%m-%d %H:%M"
+            )
+        except (ValueError, TypeError):
+            flash("Invalid date or time format.", "error")
+            return redirect(url_for("main.manual_itinerary"))
         is_public = int(request.form.get("is_public", 0))
         plan_json = request.form.get("plan_json", "")
 
@@ -406,8 +405,10 @@ def user_profile(username):
 @login_required
 def itinerary_json(id):
     itinerary = db.session.get(Itinerary, id)
-    is_owner = current_user.is_authenticated and itinerary.user_id == current_user.id
-    if itinerary is None or (not is_owner and current_user.role != "admin"):
+    if itinerary is None:
+        abort(404)
+    is_owner = itinerary.user_id == current_user.id
+    if not is_owner and current_user.role != "admin":
         abort(404)
     else:
         return jsonify({
@@ -426,19 +427,23 @@ def itinerary_json(id):
 def edit_itinerary(id):
     form = EditItineraryForm()
     itinerary = db.session.get(Itinerary, id)
-    is_owner = current_user.is_authenticated and itinerary.user_id == current_user.id
-
-    if itinerary is None or (not is_owner and current_user.role != "admin"):
+    if itinerary is None:
+        abort(404)
+    is_owner = itinerary.user_id == current_user.id
+    if not is_owner:
         abort(404)
 
     if form.validate_on_submit():
         destination = request.form.get("destination", "").strip()
-        arrive_time = datetime.strptime(
-            request.form.get("arrive_date") + " " + request.form.get("arrive_at"), "%Y-%m-%d %H:%M"
-        )
-        leave_time = datetime.strptime(
-            request.form.get("leave_date") + " " + request.form.get("leave_at"), "%Y-%m-%d %H:%M"
-        )
+        try:
+            arrive_time = datetime.strptime(
+                request.form.get("arrive_date") + " " + request.form.get("arrive_at"), "%Y-%m-%d %H:%M"
+            )
+            leave_time = datetime.strptime(
+                request.form.get("leave_date") + " " + request.form.get("leave_at"), "%Y-%m-%d %H:%M"
+            )
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid date or time format.'}), 400
         is_public = int(request.form.get("is_public", 0))
         plan_json = request.form.get("plan_json", "")
 
