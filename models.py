@@ -127,32 +127,13 @@ class Review(db.Model):
         return f"<Review {self.id} itin={self.itinerary_id} user={self.user_id} rating={self.rating}>"
 
 
-class Day(db.Model):
-    __tablename__ = "days"
+# NOTE: ``Day`` and ``Activity`` ORM models used to live here, backed by
+# the ``days`` and ``activities`` tables from the initial migration. They
+# were never wired up — every route, template, and seed script treats the
+# day-by-day plan as JSON inside ``Itinerary.content`` (see gemini.py for
+# the Pydantic schema and trip_details.html for the rendering). The two
+# tables are dropped in migration ``eff64dc9bc58``.
 
-    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
-    itinerary_id = db.Column(db.Integer, db.ForeignKey("itineraries.id"), nullable=False)
-    day_number = db.Column(db.Integer, nullable=False)
-
-    itinerary = db.relationship(
-        "Itinerary",
-        backref=db.backref("days", order_by="Day.day_number", cascade="all, delete-orphan"),
-    )
-
-class Activity(db.Model):
-    __tablename__ = "activities"
-
-    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
-    day_id = db.Column(db.Integer, db.ForeignKey("days.id"), nullable=False)
-    time = db.Column(db.String(20), nullable=False)
-    title = db.Column(db.String(200), nullable=False)
-    info = db.Column(db.Text, default="")
-    order = db.Column(db.Integer, nullable=False, default=0)
-
-    day = db.relationship(
-        "Day",
-        backref=db.backref("activities", order_by="Activity.order", cascade="all, delete-orphan"),
-    )
 
 @login.user_loader
 def load_user(user_id):
