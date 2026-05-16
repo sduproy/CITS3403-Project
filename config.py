@@ -45,6 +45,12 @@ class Config:
     # the AI and flash an error instead.
     GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
+    # Pixabay key for the destination-image proxy at /api/destination_image
+    # (see routes.py). Loaded from .env so it stays out of source control
+    # and never reaches the browser. None means the proxy returns null
+    # and the cards fall back to loremflickr.
+    PIXABAY_API_KEY = os.environ.get("PIXABAY_API_KEY")
+
 
 class DeploymentConfig(Config):
     """Normal-run config: on-disk SQLite under instance/."""
