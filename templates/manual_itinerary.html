@@ -3,8 +3,9 @@
 {% block title %}Create Manual Itinerary · SmartVoyage{% endblock %}
 {% block content %}
 
-<div class="container" style="max-width:760px; padding-top:2.5rem;">
+<div class="container" style="max-width:760px; padding-top:2.5rem; min-height: calc(100vh - 200px);">
 
+    
   <form method="POST" action="{{ url_for('main.manual_itinerary') }}" id="manual-form">
     {{ form.hidden_tag() }}
     <input type="hidden" name="plan_json" id="plan-json">
@@ -18,7 +19,7 @@
             <label for="arrive-date">Arrive Date</label>
             <input type="date" id="arrive-date" name="arrive_date" class="form-control tp-input" required>
         </div>
-        <div class="col-md-2 col-6">
+        <div class="col-md-3 col-6">
             <label for="arrive-at">Arrive Time</label>
             <input type="time" id="arrive-at" name="arrive_at" class="form-control tp-input" required>
         </div>
@@ -26,7 +27,7 @@
             <label for="leave-date">Leave Date</label>
             <input type="date" id="leave-date" name="leave_date" class="form-control tp-input" required>
         </div>
-        <div class="col-md-2 col-6">
+        <div class="col-md-3 col-6">
             <label for="leave-at">Leave Time</label>
             <input type="time" id="leave-at" name="leave_at" class="form-control tp-input" required>
         </div>
@@ -39,8 +40,8 @@
 
     <div id="days-container"></div>
 
-    <button type="button" id="addday">Add Day</button>
-    <button type="submit" id="submitform">Save Itinerary</button>
+    <button type="button" id="addday" class="btn btn-tp-secondary">Add Day</button>
+    <button type="submit" id="submitform" class="btn btn-tp-secondary">Save Itinerary</button>
   </form>
 </div>
 
