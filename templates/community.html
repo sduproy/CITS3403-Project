@@ -78,12 +78,25 @@
     <div class="d-flex justify-content-between align-items-baseline mb-4">
       <div>
         <h2 class="tp-section-title mb-0">Community Trips</h2>
-        <p class="tp-text-muted small mb-0" id="result-count">Showing 6 itineraries</p>
+        {# Result count starts empty — JS fills it on initial load and again
+           every time the AJAX pager swaps pages, using the data-* attrs
+           below as the source of truth. #}
+        <p class="tp-text-muted small mb-0" id="result-count"></p>
       </div>
     </div>
 
     <!-- Cards grid -->
-    <div class="row g-4" id="cards-grid">
+    {#
+      The data-* attributes on cards-grid expose the pagination state
+      Flask just computed so the JS can render the page-number buttons
+      without making a second round-trip on initial load. They get
+      refreshed every time loadPage() pulls a new page from /api/community.
+    #}
+    <div class="row g-4" id="cards-grid"
+         data-current-page="{{ pagination.page }}"
+         data-total-pages="{{ pagination.pages }}"
+         data-per-page="{{ pagination.per_page }}"
+         data-total="{{ pagination.total }}">
 
       {% for itinerary in itineraries %}
       <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
@@ -115,9 +128,22 @@
               </span>
             </div>
             <div class="d-flex gap-2">
-              {# Story 4: hide the Rate button for the itinerary's own author. #}
+              {# Story 4: hide the Rate button for the itinerary's own author.
+                 Every Rate button now opens the SAME #reviewModal at the
+                 bottom of the page — its per-card values (destination,
+                 review POST url, existing rating/comment) ride on the
+                 data-* attributes and get pushed into the form when the
+                 modal's 'show.bs.modal' event fires. One modal instead of
+                 one-per-card keeps the DOM small and means the AJAX
+                 pagination doesn't have to re-render modal HTML each time. #}
               {% if not (current_user.is_authenticated and itinerary.user_id == current_user.id) %}
-                <button class="btn btn-tp-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal{{ itinerary.id }}">Rate</button>
+                <button class="btn btn-tp-secondary btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#reviewModal"
+                        data-itinerary-id="{{ itinerary.id }}"
+                        data-destination="{{ itinerary.destination }}"
+                        data-review-url="{{ url_for('main.submit_review', id=itinerary.id) }}"
+                        data-current-rating="{{ review_data[itinerary.id].user_review.rating if review_data[itinerary.id].user_review else '' }}"
+                        data-current-comment="{{ review_data[itinerary.id].user_review.comment if review_data[itinerary.id].user_review else '' }}">Rate</button>
               {% endif %}
               <a href="{{ url_for('main.trip_details', id=itinerary.id) }}" class="btn btn-tp-secondary btn-sm">View Trip</a>
             </div>
@@ -125,236 +151,19 @@
           </div>
         </div>
       </div>
-<!-- Review Modal -->
-      <div class="modal fade" id="reviewModal{{ itinerary.id }}" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Rate {{ itinerary.destination }}</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <form method="POST" action="{{ url_for('main.submit_review', id=itinerary.id) }}">
-            {{ review_form.hidden_tag() }}
-            <div class="modal-body">
-              <label class="form-label">Rating (1-5)</label>
-              <input type="number" name="rating" min="1" max="5" class="form-control tp-input mb-3" value="{{ review_data[itinerary.id].user_review.rating if review_data[itinerary.id].user_review else ''}}" required>
-              <label class="form-label">Comment (optional)</label>
-              <textarea name="comment" class="form-control tp-input" rows="3">{{ review_data[itinerary.id].user_review.comment if review_data[itinerary.id].user_review else '' }}</textarea>
-            </div>
-            <div class="modal-footer">
-              <button type="submit" class="btn btn-tp-primary">Submit</button>
-            </div>
-          </form>
-        </div>
-      </div>
-      </div>
-
       {% endfor %}
-      <!-- Card 1 -->
-      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
-           data-tags="japan tokyo culture" data-duration="week" data-likes="84" data-rating="5" data-date="2026-04-10">
-        <div class="tp-card comm-card h-100">
-          <div class="comm-card-img" style="background-image: url('https://images.unsplash.com/photo-1492571350019-22de08371fd3?w=600&q=80')">
-            <span class="comm-region-badge">Asia</span>
-            <button class="like-btn" data-liked="false" onclick="toggleLike(this)" aria-label="Like">
-              <i class="bi bi-heart"></i>
-              <span>84</span>
-            </button>
-          </div>
-          <div class="card-body d-flex flex-column">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="tp-avatar">A</span>
-              <div>
-                <div class="fw-semibold" style="font-size:0.88rem;">Alex M.</div>
-                <div class="tp-text-muted" style="font-size:0.78rem;">April 2026</div>
-              </div>
-            </div>
-            <h5 class="card-title">7 Days in Japan: Tokyo to Kyoto</h5>
-            <p class="card-text flex-grow-1">Explore Shibuya, Arashiyama bamboo grove, and Fushimi Inari — a perfect blend of neon city life and ancient temples.</p>
-            <div class="comm-tags mb-2">
-              <span class="comm-chip">Japan</span>
-              <span class="comm-chip">Culture</span>
-              <span class="comm-chip">7 days</span>
-            </div>
-            <div class="comm-card-footer d-flex justify-content-between align-items-center">
-              <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 2 -->
-      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
-           data-tags="italy rome amalfi food" data-duration="week" data-likes="61" data-rating="4" data-date="2026-04-08">
-        <div class="tp-card comm-card h-100">
-          <div class="comm-card-img" style="background-image: url('https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=600&q=80')">
-            <span class="comm-region-badge">Europe</span>
-            <button class="like-btn" data-liked="false" onclick="toggleLike(this)" aria-label="Like">
-              <i class="bi bi-heart"></i>
-              <span>61</span>
-            </button>
-          </div>
-          <div class="card-body d-flex flex-column">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="tp-avatar coral">S</span>
-              <div>
-                <div class="fw-semibold" style="font-size:0.88rem;">Sofia R.</div>
-                <div class="tp-text-muted" style="font-size:0.78rem;">April 2026</div>
-              </div>
-            </div>
-            <h5 class="card-title">Rome &amp; Amalfi Coast: 8 Days</h5>
-            <p class="card-text flex-grow-1">Ancient ruins by day, pasta e vino by night. End with cliff-side Positano views you'll never forget.</p>
-            <div class="comm-tags mb-2">
-              <span class="comm-chip">Italy</span>
-              <span class="comm-chip">Food</span>
-              <span class="comm-chip">8 days</span>
-            </div>
-            <div class="comm-card-footer d-flex justify-content-between align-items-center">
-              <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;<span class="empty">&#9733;</span></div>
-              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 3 -->
-      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
-           data-tags="iceland northern lights nature" data-duration="short" data-likes="112" data-rating="5" data-date="2026-04-15">
-        <div class="tp-card comm-card h-100">
-          <div class="comm-card-img" style="background-image: url('https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600&q=80')">
-            <span class="comm-region-badge">Europe</span>
-            <button class="like-btn" data-liked="false" onclick="toggleLike(this)" aria-label="Like">
-              <i class="bi bi-heart"></i>
-              <span>112</span>
-            </button>
-          </div>
-          <div class="card-body d-flex flex-column">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="tp-avatar gold">L</span>
-              <div>
-                <div class="fw-semibold" style="font-size:0.88rem;">Lena K.</div>
-                <div class="tp-text-muted" style="font-size:0.78rem;">April 2026</div>
-              </div>
-            </div>
-            <h5 class="card-title">Iceland: 4-Day Northern Lights Chase</h5>
-            <p class="card-text flex-grow-1">Hot springs, glaciers, and the aurora borealis. A short but unforgettable escape into Iceland's raw wilderness.</p>
-            <div class="comm-tags mb-2">
-              <span class="comm-chip">Iceland</span>
-              <span class="comm-chip">Nature</span>
-              <span class="comm-chip">4 days</span>
-            </div>
-            <div class="comm-card-footer d-flex justify-content-between align-items-center">
-              <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 4 -->
-      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
-           data-tags="morocco marrakech desert culture" data-duration="short" data-likes="45" data-rating="4" data-date="2026-03-28">
-        <div class="tp-card comm-card h-100">
-          <div class="comm-card-img" style="background-image: url('https://images.unsplash.com/photo-1539020140153-e479b8c22e70?w=600&q=80')">
-            <span class="comm-region-badge">Africa</span>
-            <button class="like-btn" data-liked="false" onclick="toggleLike(this)" aria-label="Like">
-              <i class="bi bi-heart"></i>
-              <span>45</span>
-            </button>
-          </div>
-          <div class="card-body d-flex flex-column">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="tp-avatar slate">O</span>
-              <div>
-                <div class="fw-semibold" style="font-size:0.88rem;">Omar H.</div>
-                <div class="tp-text-muted" style="font-size:0.78rem;">March 2026</div>
-              </div>
-            </div>
-            <h5 class="card-title">Marrakech &amp; Sahara: 4 Days</h5>
-            <p class="card-text flex-grow-1">Lose yourself in the medina souks, sleep under Sahara stars, and wake to mint tea and tagine.</p>
-            <div class="comm-tags mb-2">
-              <span class="comm-chip">Morocco</span>
-              <span class="comm-chip">Desert</span>
-              <span class="comm-chip">4 days</span>
-            </div>
-            <div class="comm-card-footer d-flex justify-content-between align-items-center">
-              <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;<span class="empty">&#9733;</span></div>
-              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 5 -->
-      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
-           data-tags="thailand bangkok temples food" data-duration="long" data-likes="73" data-rating="5" data-date="2026-04-01">
-        <div class="tp-card comm-card h-100">
-          <div class="comm-card-img" style="background-image: url('https://images.unsplash.com/photo-1562602833-0f4ab2fc46e3?w=600&q=80')">
-            <span class="comm-region-badge">Asia</span>
-            <button class="like-btn" data-liked="false" onclick="toggleLike(this)" aria-label="Like">
-              <i class="bi bi-heart"></i>
-              <span>73</span>
-            </button>
-          </div>
-          <div class="card-body d-flex flex-column">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="tp-avatar">M</span>
-              <div>
-                <div class="fw-semibold" style="font-size:0.88rem;">Maya T.</div>
-                <div class="tp-text-muted" style="font-size:0.78rem;">April 2026</div>
-              </div>
-            </div>
-            <h5 class="card-title">Thailand: 10 Days Bangkok to Islands</h5>
-            <p class="card-text flex-grow-1">Grand Palace and street food in Bangkok, then crystal-clear Koh Lanta beaches. The ultimate Thai adventure.</p>
-            <div class="comm-tags mb-2">
-              <span class="comm-chip">Thailand</span>
-              <span class="comm-chip">Temples</span>
-              <span class="comm-chip">10 days</span>
-            </div>
-            <div class="comm-card-footer d-flex justify-content-between align-items-center">
-              <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 6 -->
-      <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
-           data-tags="peru machu picchu hiking adventure" data-duration="long" data-likes="58" data-rating="4" data-date="2026-03-20">
-        <div class="tp-card comm-card h-100">
-          <div class="comm-card-img" style="background-image: url('https://images.unsplash.com/photo-1526392060635-9d6019884377?w=600&q=80')">
-            <span class="comm-region-badge">Americas</span>
-            <button class="like-btn" data-liked="false" onclick="toggleLike(this)" aria-label="Like">
-              <i class="bi bi-heart"></i>
-              <span>58</span>
-            </button>
-          </div>
-          <div class="card-body d-flex flex-column">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="tp-avatar coral">C</span>
-              <div>
-                <div class="fw-semibold" style="font-size:0.88rem;">Carlos V.</div>
-                <div class="tp-text-muted" style="font-size:0.78rem;">March 2026</div>
-              </div>
-            </div>
-            <h5 class="card-title">Peru: Inca Trail &amp; Machu Picchu — 9 Days</h5>
-            <p class="card-text flex-grow-1">Trek the legendary Inca Trail at sunrise, discover Cusco's colonial streets, and feel the magic of Machu Picchu.</p>
-            <div class="comm-tags mb-2">
-              <span class="comm-chip">Peru</span>
-              <span class="comm-chip">Hiking</span>
-              <span class="comm-chip">9 days</span>
-            </div>
-            <div class="comm-card-footer d-flex justify-content-between align-items-center">
-              <div class="tp-stars">&#9733;&#9733;&#9733;&#9733;<span class="empty">&#9733;</span></div>
-              <a href="#" class="btn btn-tp-secondary btn-sm">View Trip</a>
-            </div>
-          </div>
-        </div>
-      </div>
 
     </div><!-- /row#cards-grid -->
+
+    <!-- ==================== AJAX PAGINATION CONTROLS ==================== -->
+    {#
+      Page-number buttons + a Next button. Rendered into by renderPagination()
+      both on initial page load (reading the data-* attrs above) and after
+      every fetch() to /api/community. Clicking a button calls loadPage(n),
+      which swaps in the new page of cards without a full page reload —
+      that's the whole point of the client-side pagination feature.
+    #}
+    <nav class="comm-pagination d-flex justify-content-center align-items-center gap-2 mt-4" id="pagination-controls" aria-label="Community page navigation"></nav>
 
     <!-- Empty state (hidden by default) -->
     <div class="tp-empty d-none" id="no-results">
@@ -366,6 +175,38 @@
 
   </div>
 </section>
+
+<!-- ==================== SHARED REVIEW MODAL ==================== -->
+{#
+  One modal for every itinerary on the page. The Rate buttons all open
+  this same modal and the show.bs.modal handler (see script block below)
+  reads the clicked button's data-* attrs to set the form action URL,
+  destination title, and prefill the rating/comment if the user has
+  already reviewed this trip. This works for both the Jinja-rendered
+  initial cards and the JS-built cards from AJAX pagination.
+#}
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Rate <span id="reviewModalDestination"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="reviewForm" method="POST" action="">
+        {{ review_form.hidden_tag() }}
+        <div class="modal-body">
+          <label class="form-label">Rating (1-5)</label>
+          <input type="number" name="rating" id="reviewModalRating" min="1" max="5" class="form-control tp-input mb-3" required>
+          <label class="form-label">Comment (optional)</label>
+          <textarea name="comment" id="reviewModalComment" class="form-control tp-input" rows="3"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-tp-primary">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <!-- ==================== PRINT AREA ==================== -->
 <div id="print-area" class="comm-print-area d-none">
@@ -514,25 +355,269 @@
   }
 </script>
 <script>
-  document.querySelectorAll('.modal').forEach(function(m) {
-    document.body.appendChild(m);
-  });
-</script>
+  /* ──────────────────────────────────────────────────────────────────
+     Shared review modal: one #reviewModal handles every Rate button on
+     the page. When a button opens the modal, Bootstrap fires
+     'show.bs.modal' with relatedTarget pointing at the clicked button —
+     we read its data-* attributes and push them into the modal form.
+     Works for both the Jinja-rendered cards (initial load) and the
+     JS-built cards from AJAX pagination, without rebuilding the modal
+     DOM for every itinerary.
+  ─────────────────────────────────────────────────────────────────── */
+  (function() {
+    var modalEl = document.getElementById('reviewModal');
+    if (!modalEl) return;
+    modalEl.addEventListener('show.bs.modal', function(event) {
+      var btn = event.relatedTarget;
+      if (!btn) return;
+      document.getElementById('reviewModalDestination').textContent = btn.dataset.destination || '';
+      document.getElementById('reviewForm').action = btn.dataset.reviewUrl || '';
+      document.getElementById('reviewModalRating').value = btn.dataset.currentRating || '';
+      document.getElementById('reviewModalComment').value = btn.dataset.currentComment || '';
+    });
+  })();
 
-<script>
-  // Hit our /api/destination_image proxy (which calls Pixabay server-side
-  // so the API key stays out of the browser). Falls back silently to the
-  // loremflickr placeholder if Pixabay has no match.
-  document.querySelectorAll('.comm-card-img[data-destination]').forEach(function(el) {
-    var dest = el.dataset.destination.split(',')[0].trim();
-    fetch('/api/destination_image?q=' + encodeURIComponent(dest))
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.url) {
-          el.style.backgroundImage = "url('" + data.url + "')";
-        }
+  /* ──────────────────────────────────────────────────────────────────
+     Destination-image fetcher: hits our /api/destination_image proxy
+     (which calls Pixabay server-side so the API key stays out of the
+     browser; falls back silently to the loremflickr placeholder if
+     Pixabay has no match). Wrapped in a function so AJAX pagination
+     can call it again after dropping a fresh page of cards into the
+     grid. The 'imageLoaded' flag prevents double-fetching the same
+     card when the user filters/sorts without changing pages.
+  ─────────────────────────────────────────────────────────────────── */
+  function loadDestinationImages() {
+    document.querySelectorAll('.comm-card-img[data-destination]').forEach(function(el) {
+      if (el.dataset.imageLoaded === '1') return;
+      var dest = el.dataset.destination.split(',')[0].trim();
+      fetch('/api/destination_image?q=' + encodeURIComponent(dest))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.url) {
+            el.style.backgroundImage = "url('" + data.url + "')";
+          }
+          el.dataset.imageLoaded = '1';
+        })
+        .catch(function() { /* keep loremflickr placeholder */ });
+    });
+  }
+
+  /* ──────────────────────────────────────────────────────────────────
+     AJAX pagination — the headline feature of this template.
+     Clicking a page-number button (or "Next →") asks /api/community for
+     that page of itineraries as JSON, rebuilds the card grid in-place,
+     and updates the URL bar via history.pushState. There is *no* full
+     page reload — that is the bit plain Flask cannot deliver, and the
+     whole reason this feature exists.
+  ─────────────────────────────────────────────────────────────────── */
+
+  // Small HTML escaper: every piece of user-supplied text (destination,
+  // username, comment...) goes through this before being concatenated
+  // into an HTML string, so a destination called  e.g.  '<script>...'
+  // can't inject anything when we innerHTML it into the grid.
+  function escapeHtml(s) {
+    if (s === null || s === undefined) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // Mirror of the Jinja for-loop card markup, in JS. Kept structurally
+  // identical so the cards look the same whether they were rendered
+  // server-side on the initial load or built client-side after a page
+  // change.
+  function buildCardHTML(it) {
+    var rd = it.review;
+    var ratingDisplay = rd.avg
+      ? '⭐️ ' + rd.avg + ' (' + rd.count + ')'
+      : 'No ratings yet';
+
+    var rateBtn = '';
+    if (it.can_review) {
+      rateBtn =
+        '<button class="btn btn-tp-secondary btn-sm"' +
+          ' data-bs-toggle="modal" data-bs-target="#reviewModal"' +
+          ' data-itinerary-id="' + it.id + '"' +
+          ' data-destination="' + escapeHtml(it.destination) + '"' +
+          ' data-review-url="' + escapeHtml(it.review_url) + '"' +
+          ' data-current-rating="' + escapeHtml(rd.user_rating == null ? '' : rd.user_rating) + '"' +
+          ' data-current-comment="' + escapeHtml(rd.user_comment || '') + '"' +
+        '>Rate</button>';
+    }
+
+    var bgImage = 'https://loremflickr.com/600/300/' +
+                  encodeURIComponent(it.destination) + ',travel?lock=' + it.id;
+
+    return '' +
+      '<div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"' +
+          ' data-tags="' + escapeHtml(it.destination.toLowerCase()) + '"' +
+          ' data-duration="week"' +
+          ' data-likes="0"' +
+          ' data-rating="' + (rd.avg || 0) + '"' +
+          ' data-date="' + escapeHtml(it.created_at_iso) + '">' +
+        '<div class="tp-card comm-card h-100">' +
+          '<div class="comm-card-img"' +
+              ' data-destination="' + escapeHtml(it.destination) + '"' +
+              ' style="background-color: var(--tp-teal);' +
+                     ' background-image: url(\'' + bgImage + '\');' +
+                     ' background-size: cover;' +
+                     ' background-position: center;">' +
+            '<span class="comm-region-badge">' + escapeHtml(it.destination) + '</span>' +
+          '</div>' +
+          '<div class="card-body d-flex flex-column">' +
+            '<div class="d-flex align-items-center gap-2 mb-2">' +
+              '<a href="' + escapeHtml(it.profile_url) + '" class="tp-avatar">' + escapeHtml(it.user_initial) + '</a>' +
+              '<div>' +
+                '<a href="' + escapeHtml(it.profile_url) + '" class="fw-semibold"' +
+                  ' style="font-size:0.88rem;text-decoration:none;color:inherit;">' +
+                  escapeHtml(it.username) +
+                '</a>' +
+                '<div class="tp-text-muted" style="font-size:0.78rem;">' + escapeHtml(it.created_at_display) + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<h5 class="card-title">' + escapeHtml(it.destination) + '</h5>' +
+            '<p class="card-text flex-grow-1">' + escapeHtml(it.arrive_display) + ' - ' + escapeHtml(it.leave_display) + '</p>' +
+            '<div class="comm-card-footer d-flex justify-content-between align-items-center">' +
+              '<div><span class="tp-text-muted" style="font-size:0.8rem;">' + ratingDisplay + '</span></div>' +
+              '<div class="d-flex gap-2">' + rateBtn +
+                '<a href="' + escapeHtml(it.trip_url) + '" class="btn btn-tp-secondary btn-sm">View Trip</a>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function renderCards(itineraries) {
+    var grid = document.getElementById('cards-grid');
+    grid.innerHTML = '';
+    itineraries.forEach(function(it) {
+      grid.insertAdjacentHTML('beforeend', buildCardHTML(it));
+    });
+  }
+
+  function renderPagination(state) {
+    var container = document.getElementById('pagination-controls');
+    container.innerHTML = '';
+    // No point showing controls if there is only one page (or none).
+    if (!state.total_pages || state.total_pages <= 1) return;
+
+    function makeButton(label, targetPage, opts) {
+      opts = opts || {};
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-sm ' + (opts.primary ? 'btn-tp-primary' : 'btn-tp-secondary');
+      if (opts.active) btn.classList.add('active');
+      btn.textContent = label;
+      btn.disabled = !!opts.disabled;
+      if (!opts.disabled) {
+        btn.addEventListener('click', function() { loadPage(targetPage); });
+      }
+      if (opts.ariaLabel) btn.setAttribute('aria-label', opts.ariaLabel);
+      return btn;
+    }
+
+    // One button per page. Fine for the seed dataset; if the public
+    // itinerary count ever grows past, say, ~12 pages, swap this for an
+    // ellipsised window so the bar doesn't overflow.
+    for (var i = 1; i <= state.total_pages; i++) {
+      container.appendChild(makeButton(String(i), i, {
+        active: i === state.page,
+        ariaLabel: 'Go to page ' + i
+      }));
+    }
+
+    // A separate Next button so users who don't want to count pages can
+    // just keep tapping forward. Disabled (greyed out) on the last page.
+    container.appendChild(makeButton('Next →', state.page + 1, {
+      primary: true,
+      disabled: !state.has_next,
+      ariaLabel: 'Next page'
+    }));
+  }
+
+  function updateResultCount(state) {
+    var el = document.getElementById('result-count');
+    if (!el) return;
+    if (!state.total) {
+      el.textContent = 'No public itineraries yet';
+      return;
+    }
+    el.textContent =
+      'Page ' + state.page + ' of ' + state.total_pages +
+      ' · ' + state.total + ' itinerar' + (state.total === 1 ? 'y' : 'ies') + ' total';
+  }
+
+  // Page-swap: ask Flask for that page as JSON, rebuild the grid, and
+  // refresh anything that depends on the cards being in the DOM
+  // (destination images, filters, modal data attrs). No reload.
+  function loadPage(pageNum) {
+    fetch('/api/community?page=' + pageNum)
+      .then(function(r) {
+        if (!r.ok) throw new Error('Bad status ' + r.status);
+        return r.json();
       })
-      .catch(function() { /* keep loremflickr */ });
+      .then(function(data) {
+        renderCards(data.itineraries);
+        renderPagination(data);
+        updateResultCount(data);
+
+        // Keep the URL bar in sync so a refresh or bookmark lands on the
+        // same page the user was looking at.
+        try {
+          history.pushState({page: data.page}, '', '/community?page=' + data.page);
+        } catch (e) { /* very old browser — no-op */ }
+
+        // Re-enrich images for the new card set and re-apply any active
+        // search/duration/sort selections so a filter the user set
+        // persists across page changes.
+        loadDestinationImages();
+        applyFilters();
+
+        // Scroll the section heading into view so the new cards are
+        // visible without the user having to scroll up themselves.
+        var heading = document.querySelector('.tp-section-title');
+        if (heading) heading.scrollIntoView({behavior: 'smooth', block: 'start'});
+      })
+      .catch(function(err) {
+        console.error('Page load failed:', err);
+      });
+  }
+
+  // Back/forward buttons should re-run the matching AJAX page load
+  // instead of triggering a full server reload.
+  window.addEventListener('popstate', function(event) {
+    var page = (event.state && event.state.page) || 1;
+    loadPage(page);
+  });
+
+  /* ──────────────────────────────────────────────────────────────────
+     Initial render kick-off. On first paint the cards are already in
+     the DOM (Jinja rendered them), so we only need to draw the
+     pagination buttons, fill the result count, and run the image
+     enrichment. The data-* attrs on #cards-grid are the source of
+     truth — Flask wrote them server-side from the same Pagination
+     object that produced the cards.
+  ─────────────────────────────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', function() {
+    var grid = document.getElementById('cards-grid');
+    if (!grid) return;
+    var page = parseInt(grid.dataset.currentPage, 10) || 1;
+    var totalPages = parseInt(grid.dataset.totalPages, 10) || 1;
+    var total = parseInt(grid.dataset.total, 10) || 0;
+    var state = {
+      page: page,
+      total_pages: totalPages,
+      total: total,
+      has_next: page < totalPages,
+      has_prev: page > 1
+    };
+    renderPagination(state);
+    updateResultCount(state);
+    loadDestinationImages();
   });
 </script>
 {% endblock %}

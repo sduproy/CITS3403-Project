@@ -66,13 +66,21 @@ def index():
     return render_template("itinerary.html", form=NewItineraryForm())
 
 
-@main.route("/community")
-def community():
-    itineraries = (
-        Itinerary.query.filter_by(is_public=1)
-        .order_by(Itinerary.created_at.desc())
-        .all()
-    )
+# How many public itineraries to show per page on /community. Kept small
+# so the AJAX pagination buttons are actually exercised against the
+# seed data set (which is only ~8 items at the moment).
+COMMUNITY_PER_PAGE = 6
+
+
+def _build_review_data(itineraries):
+    """Aggregate review stats per itinerary for the community card UI.
+
+    Returns a dict keyed by itinerary id with ``avg``/``count`` plus the
+    current user's own review (if any) so the rating modal can prefill.
+    Extracted from the inline loop in /community so the JSON pagination
+    endpoint can reuse the exact same logic — keeps the two views
+    consistent.
+    """
     review_data = {}
     for itin in itineraries:
         reviews = Review.query.filter_by(itinerary_id=itin.id).all()
@@ -81,7 +89,89 @@ def community():
         if current_user.is_authenticated:
             user_review = Review.query.filter_by(itinerary_id=itin.id, user_id=current_user.id).first()
         review_data[itin.id] = {"avg": avg, "count": len(reviews), "user_review": user_review}
-    return render_template("community.html", itineraries=itineraries, review_data=review_data, review_form=ReviewForm())
+    return review_data
+
+
+@main.route("/community")
+def community():
+    # Server-renders the first (requested) page so the user sees content
+    # before any JavaScript runs. The pagination buttons themselves then
+    # switch pages via fetch() against /api/community — see the JS at the
+    # bottom of community.html.
+    page = request.args.get("page", 1, type=int)
+    pagination = (
+        Itinerary.query.filter_by(is_public=1)
+        .order_by(Itinerary.created_at.desc())
+        .paginate(page=page, per_page=COMMUNITY_PER_PAGE, error_out=False)
+    )
+    itineraries = pagination.items
+    review_data = _build_review_data(itineraries)
+    return render_template(
+        "community.html",
+        itineraries=itineraries,
+        review_data=review_data,
+        review_form=ReviewForm(),
+        pagination=pagination,
+    )
+
+
+@main.route("/api/community")
+def api_community():
+    """Paginated JSON feed of public itineraries.
+
+    Powers the client-side pagination on /community: clicking a page
+    number (or "Next") fires fetch('/api/community?page=N'), the browser
+    rebuilds the card grid from this payload, and the URL bar is updated
+    via history.pushState — no full page reload, which is the part Flask
+    alone can't deliver.
+    """
+    page = request.args.get("page", 1, type=int)
+    pagination = (
+        Itinerary.query.filter_by(is_public=1)
+        .order_by(Itinerary.created_at.desc())
+        .paginate(page=page, per_page=COMMUNITY_PER_PAGE, error_out=False)
+    )
+    review_data = _build_review_data(pagination.items)
+
+    items = []
+    for itin in pagination.items:
+        rd = review_data[itin.id]
+        user_review = rd["user_review"]
+        items.append({
+            "id": itin.id,
+            "destination": itin.destination,
+            "user_id": itin.user_id,
+            "username": itin.user.username,
+            "user_initial": itin.user.username[0].upper(),
+            "created_at_iso": itin.created_at.strftime("%Y-%m-%d"),
+            "created_at_display": itin.created_at.strftime("%B %Y"),
+            "arrive_display": itin.arrive_time.strftime("%d %b"),
+            "leave_display": itin.leave_time.strftime("%d %b %Y"),
+            "review": {
+                "avg": rd["avg"],
+                "count": rd["count"],
+                "user_rating": user_review.rating if user_review else None,
+                "user_comment": user_review.comment if user_review else None,
+            },
+            # Server is the source of truth for "can this user review this
+            # itinerary?" — the JS just renders the button when this is True.
+            "can_review": current_user.is_authenticated and itin.user_id != current_user.id,
+            "trip_url": url_for("main.trip_details", id=itin.id),
+            "profile_url": url_for("main.user_profile", username=itin.user.username),
+            "review_url": url_for("main.submit_review", id=itin.id),
+        })
+
+    return jsonify({
+        "page": pagination.page,
+        "total_pages": pagination.pages,
+        "per_page": pagination.per_page,
+        "total": pagination.total,
+        "has_next": pagination.has_next,
+        "has_prev": pagination.has_prev,
+        "next_num": pagination.next_num,
+        "prev_num": pagination.prev_num,
+        "itineraries": items,
+    })
 
 
 @main.route("/register", methods=("GET", "POST"))
