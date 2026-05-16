@@ -20,6 +20,7 @@ from datetime import datetime
 from flask import (
     Blueprint,
     abort,
+    current_app,
     flash,
     redirect,
     render_template,
@@ -32,6 +33,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import gemini
+import requests
 from extensions import db
 from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm, ReviewForm, ManualItineraryForm, EditItineraryForm, AdminDeleteReviewForm
 
@@ -510,3 +512,46 @@ def submit_review(id):
         flash("Review submitted!", "success")
     db.session.commit()
     return redirect(url_for("main.community"))
+
+# In-memory cache so we don't burn through Pixabay's 5000/day quota
+# re-fetching the same destinations every page load. Cleared on
+# server restart, which is fine.
+_pixabay_cache = {}
+
+
+@main.route("/api/destination_image")
+def destination_image():
+    """Proxy to Pixabay so the API key stays server-side (never reaches
+    the browser). Returns {"url": "..."} or {"url": null} if no hit."""
+    destination = request.args.get("q", "").strip()
+    if not destination:
+        return jsonify({"url": None})
+
+    if destination in _pixabay_cache:
+        return jsonify({"url": _pixabay_cache[destination]})
+
+    api_key = current_app.config.get("PIXABAY_API_KEY")
+    if not api_key:
+        return jsonify({"url": None})
+
+    try:
+        resp = requests.get(
+            "https://pixabay.com/api/",
+            params={
+                "key": api_key,
+                "q": destination,
+                "image_type": "photo",
+                "category": "travel",
+                "per_page": 3,
+                "safesearch": "true",
+            },
+            timeout=5,
+        )
+        resp.raise_for_status()
+        hits = resp.json().get("hits", [])
+        url = hits[0].get("webformatURL") if hits else None
+    except Exception:
+        url = None
+
+    _pixabay_cache[destination] = url
+    return jsonify({"url": url})

@@ -89,7 +89,12 @@
       <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
         data-tags="{{ itinerary.destination | lower }}" data-duration="week" data-likes="0" data-rating="0" data-date="{{ itinerary.created_at.strftime('%Y-%m-%d') }}">
         <div class="tp-card comm-card h-100">
-          <div class="comm-card-img" style="background: linear-gradient(135deg, var(--tp-teal), var(--tp-slate))">
+          <div class="comm-card-img" 
+                data-destination="{{ itinerary.destination }}"
+                style="background-color: var(--tp-teal);
+                        background-image: url('https://loremflickr.com/600/300/{{ itinerary.destination | urlencode }},travel?lock={{ itinerary.id }}');
+                        background-size: cover;
+                        background-position: center;">
             <span class="comm-region-badge">{{ itinerary.destination }}</span>
           </div>
           <div class="card-body d-flex flex-column">
@@ -511,6 +516,23 @@
 <script>
   document.querySelectorAll('.modal').forEach(function(m) {
     document.body.appendChild(m);
+  });
+</script>
+
+<script>
+  // Hit our /api/destination_image proxy (which calls Pixabay server-side
+  // so the API key stays out of the browser). Falls back silently to the
+  // loremflickr placeholder if Pixabay has no match.
+  document.querySelectorAll('.comm-card-img[data-destination]').forEach(function(el) {
+    var dest = el.dataset.destination.split(',')[0].trim();
+    fetch('/api/destination_image?q=' + encodeURIComponent(dest))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.url) {
+          el.style.backgroundImage = "url('" + data.url + "')";
+        }
+      })
+      .catch(function() { /* keep loremflickr */ });
   });
 </script>
 {% endblock %}

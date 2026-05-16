@@ -22,6 +22,11 @@
     {% if itineraries %}
       {% for itinerary in itineraries %}
         <div class="tp-card mb-3">
+          <img class="card-img-top"
+            data-destination="{{ itinerary.destination }}"
+            src="https://loremflickr.com/600/200/{{ itinerary.destination | urlencode }},travel?lock={{ itinerary.id }}"
+            alt="{{ itinerary.destination }}"
+            style="height: 140px; object-fit: cover;">
           <div class="card-body">
             <h5>{{ itinerary.destination }}</h5>
             <p class="tp-text-muted">{{ itinerary.arrive_time.strftime('%Y-%m-%d %H:%M') }} &rarr; {{ itinerary.leave_time.strftime('%Y-%m-%d %H:%M') }}</p>
@@ -111,4 +116,21 @@
     })
   })
 </script>
+
+<script>
+  // Hit our /api/destination_image proxy. Dashboard uses <img> tags so
+  // we set .src instead of style.backgroundImage.
+  document.querySelectorAll('img[data-destination]').forEach(function(el) {
+    var dest = el.dataset.destination.split(',')[0].trim();
+    fetch('/api/destination_image?q=' + encodeURIComponent(dest))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.url) {
+          el.src = data.url;
+        }
+      })
+      .catch(function() { /* keep loremflickr */ });
+  });
+</script>
+
 {% endblock %}
