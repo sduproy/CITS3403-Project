@@ -26,7 +26,7 @@ import click
 from werkzeug.security import generate_password_hash
 
 from extensions import db
-from models import Itinerary, User
+from models import Itinerary, Review, User
 
 
 # ── Showcase user accounts ─────────────────────────────────────────────
@@ -328,16 +328,81 @@ def _iceland_plan(start_date):
 # (username, destination string saved to the DB, plan builder, arrive_time, leave_time)
 # Destinations intentionally repeat for Bali and Tokyo so trending shows
 # counts greater than 1.
+#
+# Each spec carries a stable string "key" so REVIEWS_SPEC below can attach
+# fake reviews to a specific trip by name rather than by list index — much
+# less fragile if the list is ever reordered.
 
 ITINERARIES_SPEC = [
-    {"username": "anna_voyage",   "destination": "Bali",    "plan_fn": _bali_plan,        "arrive": datetime(2026, 6, 5, 10, 0),  "leave": datetime(2026, 6, 7, 18, 0)},
-    {"username": "marco_trips",   "destination": "Bali",    "plan_fn": _bali_short_plan,  "arrive": datetime(2026, 7, 12, 9, 0),  "leave": datetime(2026, 7, 13, 20, 0)},
-    {"username": "lena_explore",  "destination": "Tokyo",   "plan_fn": _tokyo_plan,       "arrive": datetime(2026, 8, 1, 8, 0),   "leave": datetime(2026, 8, 3, 21, 0)},
-    {"username": "carlos_wander", "destination": "Tokyo",   "plan_fn": _tokyo_kyoto_plan, "arrive": datetime(2026, 9, 14, 11, 0), "leave": datetime(2026, 9, 15, 22, 0)},
-    {"username": "anna_voyage",   "destination": "Paris",   "plan_fn": _paris_plan,       "arrive": datetime(2026, 5, 20, 13, 0), "leave": datetime(2026, 5, 21, 19, 0)},
-    {"username": "marco_trips",   "destination": "Greece",  "plan_fn": _greece_plan,      "arrive": datetime(2026, 6, 25, 12, 0), "leave": datetime(2026, 6, 27, 20, 0)},
-    {"username": "lena_explore",  "destination": "Morocco", "plan_fn": _morocco_plan,     "arrive": datetime(2026, 10, 3, 9, 0),  "leave": datetime(2026, 10, 4, 21, 0)},
-    {"username": "carlos_wander", "destination": "Iceland", "plan_fn": _iceland_plan,     "arrive": datetime(2026, 11, 10, 7, 0), "leave": datetime(2026, 11, 11, 22, 0)},
+    {"key": "anna_bali",      "username": "anna_voyage",   "destination": "Bali",    "plan_fn": _bali_plan,        "arrive": datetime(2026, 6, 5, 10, 0),  "leave": datetime(2026, 6, 7, 18, 0)},
+    {"key": "marco_bali",     "username": "marco_trips",   "destination": "Bali",    "plan_fn": _bali_short_plan,  "arrive": datetime(2026, 7, 12, 9, 0),  "leave": datetime(2026, 7, 13, 20, 0)},
+    {"key": "lena_tokyo",     "username": "lena_explore",  "destination": "Tokyo",   "plan_fn": _tokyo_plan,       "arrive": datetime(2026, 8, 1, 8, 0),   "leave": datetime(2026, 8, 3, 21, 0)},
+    {"key": "carlos_tokyo",   "username": "carlos_wander", "destination": "Tokyo",   "plan_fn": _tokyo_kyoto_plan, "arrive": datetime(2026, 9, 14, 11, 0), "leave": datetime(2026, 9, 15, 22, 0)},
+    {"key": "anna_paris",     "username": "anna_voyage",   "destination": "Paris",   "plan_fn": _paris_plan,       "arrive": datetime(2026, 5, 20, 13, 0), "leave": datetime(2026, 5, 21, 19, 0)},
+    {"key": "marco_greece",   "username": "marco_trips",   "destination": "Greece",  "plan_fn": _greece_plan,      "arrive": datetime(2026, 6, 25, 12, 0), "leave": datetime(2026, 6, 27, 20, 0)},
+    {"key": "lena_morocco",   "username": "lena_explore",  "destination": "Morocco", "plan_fn": _morocco_plan,     "arrive": datetime(2026, 10, 3, 9, 0),  "leave": datetime(2026, 10, 4, 21, 0)},
+    {"key": "carlos_iceland", "username": "carlos_wander", "destination": "Iceland", "plan_fn": _iceland_plan,     "arrive": datetime(2026, 11, 10, 7, 0), "leave": datetime(2026, 11, 11, 22, 0)},
+]
+
+
+# ── Review specs ───────────────────────────────────────────────────────
+# Fake reviews for the demo so /community has a mix of rated and
+# unrated trips. Two trips (carlos_tokyo, lena_morocco) are deliberately
+# left unreviewed — that way the "Top rated" client-side sort visibly
+# moves rated trips upward while unrated ones drop to the bottom, which
+# makes the sorting feature obvious during the presentation.
+#
+# Constraints respected:
+#   - reviewers are all seed users (anna_voyage, marco_trips, lena_explore,
+#     carlos_wander), matching the "real reviews from real users" spirit
+#   - no user reviews their own trip (the submit_review route enforces
+#     this on real reviews too — seeding the same way keeps the demo DB
+#     a valid state the running app could have produced organically)
+#   - the (itinerary_id, user_id) UNIQUE constraint on the reviews table
+#     means at most one review per (trip, user) pair — none repeat below
+#
+# Comments reference specific activities/locations from each plan so they
+# read like a human who actually went on the trip, and tone is varied
+# (5-star raves, mid 3-star with criticism) so it doesn't feel astroturfed.
+
+REVIEWS_SPEC = [
+    # anna_bali — 2 reviews, avg 4.5
+    {"itinerary_key": "anna_bali", "reviewer": "marco_trips", "rating": 4,
+     "comment": "Loved Tegallalang and Tanah Lot at sunset — both lived up to the hype. Day one runs hot with the ridge walk after the monkey forest though; would swap Campuhan to a morning slot."},
+    {"itinerary_key": "anna_bali", "reviewer": "carlos_wander", "rating": 5,
+     "comment": "Nice mix of culture and beach. The Tirta Empul ritual was the unexpected highlight for me, and ending at La Plancha with sand in your toes is exactly the right way to wrap a Bali trip."},
+
+    # marco_bali — 1 review, avg 5.0
+    {"itinerary_key": "marco_bali", "reviewer": "lena_explore", "rating": 5,
+     "comment": "Nusa Penida from Sanur is the move. Kelingking Beach genuinely lives up to the photos. Single Fin at sunset is mandatory — go early for a cliff-edge spot."},
+
+    # lena_tokyo — 3 reviews, avg 4.7
+    {"itinerary_key": "lena_tokyo", "reviewer": "anna_voyage", "rating": 5,
+     "comment": "First-afternoon Shibuya then Hachiko then conveyor sushi is the perfect orientation. Omoide Yokocho at night honestly felt like stepping onto a film set."},
+    {"itinerary_key": "lena_tokyo", "reviewer": "carlos_wander", "rating": 5,
+     "comment": "The Asakusa morning routine works — get to Senso-ji at opening and you can actually photograph the lanterns without a thousand selfies in frame. Skytree is overpriced but the view doesn't lie."},
+    {"itinerary_key": "lena_tokyo", "reviewer": "marco_trips", "rating": 4,
+     "comment": "Excellent first two days. Day three was a bit muted by comparison — Meiji Jingu is lovely but Yoyogi Park at sunset felt like filler. Would swap for Shimokita or Daikanyama."},
+
+    # carlos_tokyo — DELIBERATELY UNREVIEWED for the sort demo
+
+    # anna_paris — 2 reviews, avg 3.5
+    {"itinerary_key": "anna_paris", "reviewer": "lena_explore", "rating": 4,
+     "comment": "Eiffel at opening saved us a 90-min queue. d'Orsay over the Louvre is the right call for two days. Felt rushed in the Marais though — would add half a day."},
+    {"itinerary_key": "anna_paris", "reviewer": "marco_trips", "rating": 3,
+     "comment": "Two days isn't really enough for Paris, and this itinerary feels the squeeze. Sacre-Coeur sunset is beautiful but the rest of the day flies past. Worth padding to three days if you can."},
+
+    # marco_greece — 1 review, avg 5.0
+    {"itinerary_key": "marco_greece", "reviewer": "anna_voyage", "rating": 5,
+     "comment": "Oia sunset earned every cliché. Santo Wines as a pre-sunset stop is the right call — you arrive at the caldera already loose. The Mykonos day-trip ferry timing actually works, which surprised me."},
+
+    # lena_morocco — DELIBERATELY UNREVIEWED for the sort demo
+
+    # carlos_iceland — 2 reviews, avg 5.0
+    {"itinerary_key": "carlos_iceland", "reviewer": "anna_voyage", "rating": 5,
+     "comment": "Hit all three Golden Circle classics with energy to spare. Blue Lagoon at a late evening slot was much quieter than the daytime crush — book the last entry."},
+    {"itinerary_key": "carlos_iceland", "reviewer": "marco_trips", "rating": 5,
+     "comment": "Aurora chase was a gamble that paid off — KP 4 night, clear sky. Even without the lights, Strokkur erupting on cue every few minutes is one of those just-stand-there moments."},
 ]
 
 
@@ -362,20 +427,39 @@ def seed_community_data():
         db.session.add(user)
         user_objs[spec["username"]] = user
 
-    db.session.flush()  # assign IDs without committing yet
+    db.session.flush()  # assign user IDs without committing yet
 
+    # Insert itineraries, keeping a key -> Itinerary lookup so the reviews
+    # loop below can attach a Review to a named trip without having to
+    # query it back out of the DB.
+    itin_objs = {}
     for itin_spec in ITINERARIES_SPEC:
         owner = user_objs[itin_spec["username"]]
-        db.session.add(
-            Itinerary(
-                user_id=owner.id,
-                destination=itin_spec["destination"],
-                arrive_time=itin_spec["arrive"],
-                leave_time=itin_spec["leave"],
-                content=itin_spec["plan_fn"](itin_spec["arrive"].date()),
-                is_public=1,
-            )
+        itinerary = Itinerary(
+            user_id=owner.id,
+            destination=itin_spec["destination"],
+            arrive_time=itin_spec["arrive"],
+            leave_time=itin_spec["leave"],
+            content=itin_spec["plan_fn"](itin_spec["arrive"].date()),
+            is_public=1,
         )
+        db.session.add(itinerary)
+        itin_objs[itin_spec["key"]] = itinerary
+
+    # Flush so each Itinerary gets its primary-key id assigned. Without
+    # this, Review.itinerary_id would be NULL (Itinerary.id is only
+    # populated once the row reaches the DB, even before commit).
+    db.session.flush()
+
+    for review_spec in REVIEWS_SPEC:
+        itinerary = itin_objs[review_spec["itinerary_key"]]
+        reviewer = user_objs[review_spec["reviewer"]]
+        db.session.add(Review(
+            itinerary_id=itinerary.id,
+            user_id=reviewer.id,
+            rating=review_spec["rating"],
+            comment=review_spec["comment"],
+        ))
 
     db.session.commit()
     return True
@@ -387,8 +471,9 @@ def seed_community_command():
     inserted = seed_community_data()
     if inserted:
         click.echo(
-            f"Seeded {len(SHOWCASE_USERS)} showcase users and "
-            f"{len(ITINERARIES_SPEC)} public itineraries."
+            f"Seeded {len(SHOWCASE_USERS)} showcase users, "
+            f"{len(ITINERARIES_SPEC)} public itineraries, and "
+            f"{len(REVIEWS_SPEC)} reviews."
         )
     else:
         click.echo(
