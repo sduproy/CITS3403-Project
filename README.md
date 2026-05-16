@@ -73,9 +73,16 @@ pip install -r requirements.txt
 cp .env.example .env
 python -c "import secrets; print('SECRET_KEY=' + secrets.token_hex(32))" >> .env
 
-# 4. (Optional) drop your Google AI Studio key into .env so /itinerary/new
+# 4a. (Optional) drop your Google AI Studio key into .env so /itinerary/new
 #    can call Gemini. Without it the AI route flashes an error and refuses.
 echo "GOOGLE_API_KEY=<paste-from-aistudio.google.com/app/apikey>" >> .env
+
+# 4b. (Optional but recommended) Pixabay key for higher-quality
+#     destination photos on itinerary cards. Without it, cards
+#     fall back to loremflickr (lower quality but still works).
+#     Free signup: https://pixabay.com/api/docs/
+echo "PIXABAY_API_KEY=<paste-from-pixabay-api-docs>" >> .env
+
 
 # 5. Just run. bootstrap_db() applies every migration on startup and
 #    seeds the admin user (admin / admin) on the first boot.
@@ -84,6 +91,9 @@ python -m flask --app app.py run
 
 `flask init-db` (the destructive reset) is still available if you want to nuke
 local state and start from scratch.
+
+**Default admin login** (seeded on first boot): username `admin`, password `admin`
+
 
 
 ## Tech stack at a glance
@@ -99,6 +109,11 @@ local state and start from scratch.
 | Templates | Jinja2 + Bootstrap 5 |
 | Password hashing | werkzeug.security (pbkdf2:sha256) |
 | Database | SQLite (single file at `instance/travelplan.sqlite`) |
+| Destination images | Pixabay API (server-side proxy) |
+| Interactive maps | Leaflet 1.9.4 (via unpkg CDN) |
+| Client-side JS | Vanilla JavaScript + Fetch API (AJAX) |
+
+
 
 The architecture follows the MVC pattern from the lectures: `models.py` is
 the model layer, `templates/*.html` is the view, and `routes.py` is the
