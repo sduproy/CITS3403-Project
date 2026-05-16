@@ -1,8 +1,58 @@
-# CITS3403-Project
+# CITS3403-Project SmartVoyage
 
-CITS3403 Semester Project — SmartVoyage, an AI-powered travel itinerary planner
-built on Flask + Flask-SQLAlchemy + Flask-Login + Flask-WTF + Flask-Migrate +
-SQLite.
+## Overview
+
+SmartVoyage is an online AI-powered travel itinerary planner that can be used to create, share and view travel itineraries. Users can manually create their itineraries, use AI to create one or just view the most popular ones. Itineraries can be set to private or public, and all public itineraries can be viewed and rated through a user's profile or the community page. 
+
+This website was designed to make travel planning trips simple. Allowing users easy access to detailed itineraries through the AI or publicly shared ones, while allowing more creative or experienced traveller to create their own itinerary and share it for others to see. 
+
+## Features
+- **AI itinerary generation** 
+  - create a full day-by-day travel plan from just a destination and travel dates
+  - Activities, locations, times and descriptions generated automatically
+  - Powered by Google Gemini AI
+
+- **Manual itinerary editor**  
+  - build and edit itineraries from scratch
+  - Add and remove days and activities dynamically
+  - Pre-populated with existing data when editing
+
+- **Trip details**
+  - Day-by-day activity timeline with times, locations and descriptions
+  - Interactive map showing all activity locations
+  - Print-friendly layout for taking your plan offline
+
+- **Community page** — browse and discover public itineraries from other users
+  - Filter by trending destinations
+  - View any itinerary directly from the community feed
+
+- **Interactive map**  
+  - Easily find location of each activity
+  - Click activities to fly to their location on the map
+
+- **Reviews & ratings** 
+  - One review per user per itinerary
+  - Star ratings and comments
+
+- **Personal dashboard** 
+  - Toggle public/private instantly
+  - View your own itineraries
+  - Delete unwanted itineraries of your own
+
+- **Admin dashboard** 
+  - Delete any user, itinerary or review
+
+- **User profiles** 
+  - View any user's public itineraries
+
+
+## Group Members
+| UWA ID | Name | GitHub Username |
+|--------|------|-----------------|
+| 24314165 | Sean Du | sduproy |
+| 24246563 | Sakindu Dassanayake | sakindudassanayake-arch |
+| 24483305 | Voon Yan Kho | VoonYan |
+| 24467305 | Robert Turner | vfbmdcccxciii |
 
 ## First-time setup
 
@@ -27,83 +77,6 @@ python -m flask --app app.py run
 `flask init-db` (the destructive reset) is still available if you want to nuke
 local state and start from scratch.
 
-## Database migrations — the workflow that replaces "delete and reinit"
-
-The project uses **Flask-Migrate** (Alembic) to version the database schema.
-The migration scripts live in `migrations/versions/`. Each one has an
-`upgrade()` and `downgrade()` so we can move forward and backward in schema
-history without losing existing data.
-
-### When you pull someone else's schema change
-
-```bash
-git pull
-python -m flask --app app.py run   # bootstrap_db runs `flask db upgrade` for you
-```
-
-That's it — your existing rows are preserved. **Don't delete
-`instance/travelplan.sqlite` unless you actually want to wipe local data.**
-
-If you'd rather apply migrations explicitly without starting the server:
-
-```bash
-python -m flask --app app.py db upgrade
-```
-
-### When YOU change the schema (new column, new table, etc.)
-
-1. Edit the relevant model in `models.py` — add the column / class / constraint.
-2. Auto-generate the migration:
-
-   ```bash
-   python -m flask --app app.py db migrate -m "describe what changed"
-   ```
-
-   Alembic compares the new model definitions against your DB's current
-   schema and writes a new file in `migrations/versions/`.
-
-3. Open the generated file and **read it before committing**. Alembic gets
-   most things right, but column renames and type changes sometimes need
-   manual tweaks (the auto-generator can't always tell a rename apart from
-   a drop + add). The slide says exactly this: *"sometimes!"* it's automatic.
-
-4. Apply it locally to verify it works:
-
-   ```bash
-   python -m flask --app app.py db upgrade
-   ```
-
-5. Commit BOTH the model change and the migration script in the same commit.
-
-### Useful commands
-
-| Command | What |
-|---|---|
-| `flask db current` | Which migration is the DB currently on? |
-| `flask db history` | Full chain of migrations in this branch |
-| `flask db heads` | Tip(s) of the migration history |
-| `flask db downgrade` | Roll back one migration |
-| `flask db downgrade base` | Roll back ALL migrations (back to empty) |
-| `flask db upgrade` | Apply all pending migrations |
-| `flask db migrate -m "..."` | Auto-generate a new migration from current model state |
-| `flask db revision -m "..."` | Make an empty migration script you fill in by hand |
-
-### Common gotchas
-
-- **"`flask db migrate` says no changes detected"** — bootstrap_db's
-  `upgrade()` already brought the DB in sync with the models BEFORE Alembic
-  ran the comparison. This shouldn't happen unless something else
-  recreated the schema; if it does, drop the DB (`rm
-  instance/travelplan.sqlite`) and try again.
-- **"sqlite3.OperationalError: no such column"** when running `flask db
-  migrate` — the models are ahead of the DB and bootstrap_db's seed query
-  is failing on the missing column. The function catches this and skips the
-  seed; if it doesn't, your DB is in a weird intermediate state — re-run
-  `flask db upgrade` to land at HEAD, then try again.
-- **A teammate force-pushed a migration that conflicts with yours** —
-  one of you needs to `flask db downgrade` to before the conflict, then
-  re-generate. Migration filenames embed random Alembic revision IDs, so
-  two parallel branches always conflict if they both touch the schema.
 
 ## Tech stack at a glance
 
@@ -122,3 +95,33 @@ python -m flask --app app.py db upgrade
 The architecture follows the MVC pattern from the lectures: `models.py` is
 the model layer, `templates/*.html` is the view, and `routes.py` is the
 controller (with `forms.py` and `gemini.py` as adjacent helpers).
+
+
+## Running Tests
+
+### Unit Tests
+
+Run all unit tests:
+```bash
+python -m unittest discover tests -v
+```
+
+Run a specific unit test file:
+```bash
+python -m unittest tests.test_models -v
+python -m unittest tests.test_routes -v
+```
+
+### Selenium Tests
+
+Selenium tests require Google Chrome to be installed. Ensure the app is running before executing them.
+
+Run all Selenium tests:
+```bash
+python -m unittest tests.test_selenium -v
+```
+
+Run a specific Selenium test:
+```bash
+python -m unittest tests.test_selenium.SeleniumTests.test_name_here -v
+```
