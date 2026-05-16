@@ -62,6 +62,74 @@
     border: 2px solid #fff;
     box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
   }
+
+  /* ────────────────────────────────────────────────────────────────────
+     PRINT STYLESHEET
+     Only applied when the user hits Ctrl+P / clicks the Print button.
+     Goals:
+       • All days appear, not just the one currently visible in the
+         day-by-day toggle. The JS sets style="display:none" on hidden
+         days; `display: block !important` beats inline styles.
+       • Navigation buttons, the map status line, and the whole reviews
+         section don't belong in a printed itinerary, so we hide them.
+       • Map and individual day blocks shouldn't get cut in half across
+         page boundaries — page-break-inside: avoid (plus the modern
+         break-inside: avoid) bumps each block to the next page if it
+         would otherwise straddle a break.
+       • The sticky map column drops back to static flow so it prints
+         next to / below the days instead of trying to stick to a
+         viewport that doesn't exist in print.
+     ──────────────────────────────────────────────────────────────── */
+  @media print {
+    /* Hide elements that shouldn't show in print. */
+    .no-print,
+    #map-status {
+      display: none !important;
+    }
+
+    /* Force every day block visible — overrides the inline display:none
+       the JS toggle sets on hidden days. */
+    .tp-itinerary-day {
+      display: block !important;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      box-shadow: none;          /* shadows render as grey rectangles in print */
+      border: 1px solid #ddd;
+    }
+
+    /* Don't let the map get split across two pages, and undo the sticky
+       column so it prints in normal flow. Trim the height a touch so it
+       has a better chance of fitting on a single page alongside content. */
+    .tp-map-sticky {
+      position: static !important;
+    }
+    #osm-map {
+      height: 420px !important;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      box-shadow: none;
+    }
+
+    /* Remove the active-row highlight and pulsing marker — both are
+       interactive states that would just print as visual noise. */
+    .tp-time-block.active {
+      background: none !important;
+      box-shadow: none !important;
+    }
+    .tp-pulse-ring,
+    .tp-marker-active {
+      display: none !important;
+    }
+
+    /* Hint to the browser that links should print their URL after the
+       text. Optional but useful for the Google Maps links inside popups,
+       though popups themselves are usually closed at print time. */
+    a[href]:not([href^="#"])::after {
+      content: " (" attr(href) ")";
+      font-size: 0.75em;
+      color: #555;
+    }
+  }
 </style>
 {% endblock %}
 
@@ -82,8 +150,10 @@
     {% endif %}
 
     {# Toggle row — "Show All Days" flips between day-by-day and all-at-once.
-       Hidden entirely if there's only one day, since both modes look the same. #}
-    <div class="mt-2 d-flex gap-2 flex-wrap mb-3">
+       Hidden entirely if there's only one day, since both modes look the same.
+       The .no-print class is consumed by the @media print block above so this
+       row of buttons never appears in the printed copy of the itinerary. #}
+    <div class="mt-2 d-flex gap-2 flex-wrap mb-3 no-print">
       <button id="btnShow" class="btn-tp-secondary"
               {% if plan.days|length <= 1 %}style="display:none"{% endif %}>Show All Days</button>
       <button id="btnprev" class="btn-tp-secondary" style="display:none">Previous Day</button>
@@ -152,8 +222,10 @@
   {# Reviews section — visible to anyone who can see this itinerary
      (i.e. the public-or-owner-or-admin check in the route already passed).
      Story 4 will add the review-submission form here; for now this is
-     read-only. #}
-  <section class="mt-5 mb-4">
+     read-only. .no-print keeps reviews out of the printed copy — a hard
+     copy is meant to be the user's itinerary, not other people's
+     opinions about it. #}
+  <section class="mt-5 mb-4 no-print">
     <h3 style="font-family: var(--tp-font-display);">Reviews</h3>
     {% set sorted_reviews = itinerary.reviews|sort(attribute='created_at', reverse=true) %}
     {% if sorted_reviews %}
