@@ -95,6 +95,12 @@
       {% if itinerary.user_id == current_user.id %}
         <a href="{{ url_for('main.edit_itinerary', id=itinerary.id) }}" class="btn btn-tp-secondary">Edit</a>
       {% endif %}
+      {% if current_user.is_authenticated and itinerary.user_id != current_user.id and itinerary.is_public %}
+        <form method="POST" action="{{ url_for('main.save_itinerary', id=itinerary.id) }}">
+            {{ form.hidden_tag() }}
+            <button type="submit" class="btn btn-tp-secondary">Save to My Itineraries</button>
+        </form>
+      {% endif %}
     </div>
 
     <div class="row g-4">
