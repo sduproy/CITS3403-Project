@@ -387,6 +387,10 @@ def manual_itinerary():
             flash("Invalid itinerary data.", "error")
             return redirect(url_for("main.manual_itinerary"))
 
+        if leave_time <= arrive_time:
+            flash("Leave date/time must be after arrive date/time.", "error")
+            return redirect(url_for("main.manual_itinerary"))
+
         itinerary = Itinerary(
             user_id=current_user.id,
             destination=destination,
@@ -460,6 +464,8 @@ def edit_itinerary(id):
         except (json.JSONDecodeError, ValueError, AttributeError):
             return jsonify({'error': 'Invalid itinerary data.'}), 400
 
+        if leave_time <= arrive_time:
+            return jsonify({'error': 'Leave date/time must be after arrive date/time.'}), 400
 
         itinerary.destination=destination
         itinerary.arrive_time=arrive_time
