@@ -4,6 +4,7 @@
 
 SmartVoyage is an online AI-powered travel itinerary planner that can be used to create, share and view travel itineraries. Users can manually create their itineraries, use AI to create one or just view the most popular ones. Itineraries can be set to private or public, and all public itineraries can be viewed and rated through a user's profile or the community page. 
 
+## Purpose
 This website was designed to make travel planning trips simple. Allowing users easy access to detailed itineraries through the AI or publicly shared ones, while allowing more creative or experienced traveller to create their own itinerary and share it for others to see. 
 
 ## Features
@@ -22,7 +23,8 @@ This website was designed to make travel planning trips simple. Allowing users e
   - Interactive map showing all activity locations
   - Print-friendly layout for taking your plan offline
 
-- **Community page** — browse and discover public itineraries from other users
+- **Community page** 
+  - Browse and discover public itineraries from other users
   - Filter by trending destinations
   - View any itinerary directly from the community feed
 
@@ -57,19 +59,25 @@ This website was designed to make travel planning trips simple. Allowing users e
 ## First-time setup
 
 ```bash
-# 1. Clone, then install all the deps from requirements.txt.
+
+# 1. Create and activate a virtual environment
+python -m venv .venv
+.venv\Scripts\activate      # Windows
+source .venv/bin/activate   # Mac/Linux
+
+# 2. Clone, then install all the deps from requirements.txt.
 pip install -r requirements.txt
 
-# 2. (Optional, recommended) generate a real SECRET_KEY and put it in .env.
+# 3. (Optional, recommended) generate a real SECRET_KEY and put it in .env.
 #    Without this the loud "dev-only-INSECURE..." fallback kicks in.
 cp .env.example .env
 python -c "import secrets; print('SECRET_KEY=' + secrets.token_hex(32))" >> .env
 
-# 3. (Optional) drop your Google AI Studio key into .env so /itinerary/new
+# 4. (Optional) drop your Google AI Studio key into .env so /itinerary/new
 #    can call Gemini. Without it the AI route flashes an error and refuses.
 echo "GOOGLE_API_KEY=<paste-from-aistudio.google.com/app/apikey>" >> .env
 
-# 4. Just run. bootstrap_db() applies every migration on startup and
+# 5. Just run. bootstrap_db() applies every migration on startup and
 #    seeds the admin user (admin / admin) on the first boot.
 python -m flask --app app.py run
 ```
@@ -114,7 +122,7 @@ python -m unittest tests.test_routes -v
 
 ### Selenium Tests
 
-Selenium tests require Google Chrome to be installed. Ensure the app is running before executing them.
+Selenium tests require Google Chrome to be installed. 
 
 Run all Selenium tests:
 ```bash
@@ -124,4 +132,10 @@ python -m unittest tests.test_selenium -v
 Run a specific Selenium test:
 ```bash
 python -m unittest tests.test_selenium.SeleniumTests.test_name_here -v
+```
+
+### All Tests
+Run all tests:
+```bash
+python -m unittest discover tests -v
 ```
