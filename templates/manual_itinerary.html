@@ -111,6 +111,18 @@
 
     form.addEventListener('submit', function(e){
         e.preventDefault()
+        const arriveDate = document.getElementById('arrive-date').value
+        const arriveAt = document.getElementById('arrive-at').value
+        const leaveDate = document.getElementById('leave-date').value
+        const leaveAt = document.getElementById('leave-at').value
+
+        const arriveDateTime = new Date(arriveDate + 'T' + arriveAt)
+        const leaveDateTime = new Date(leaveDate + 'T' + leaveAt)
+
+        if(leaveDateTime <= arriveDateTime){
+            alert('Leave date/time must be after arrive date/time.')
+            return
+        }
         const days = []
 
         document.querySelectorAll('.tp-card').forEach(function(card, idx){
