@@ -74,6 +74,24 @@ def create_app(config_class=DeploymentConfig):
     if not app.config.get("TESTING"):
         with app.app_context():
             db_module.bootstrap_db()
+            # Also auto-seed the showcase community content (4 fake users
+            # + their 8 sample itineraries) so /community has data out of
+            # the box on a fresh checkout. seed_community_data() is
+            # idempotent — it bails immediately if its first showcase
+            # user (anna_voyage) is already present, so deleted demo
+            # rows stay deleted and existing installs aren't disturbed.
+            # The `flask seed-community` CLI command remains available
+            # for explicit reseeds after `flask init-db`.
+            #
+            # Wrapped in try/except for the same reason as the admin
+            # seed in bootstrap_db: if the models are ahead of the DB
+            # schema (mid-migration), the insert can fail on a missing
+            # column. We swallow that here so app startup doesn't break,
+            # and the next start after `flask db upgrade` will seed.
+            try:
+                seed_community.seed_community_data()
+            except Exception:
+                db.session.rollback()
 
     return app
 
