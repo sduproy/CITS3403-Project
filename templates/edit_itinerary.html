@@ -3,8 +3,9 @@
 {% block title %}Edit Itinerary · SmartVoyage{% endblock %}
 {% block content %}
 
-<div class="container" style="max-width:760px; padding-top:2.5rem;">
+<div class="container" style="max-width:760px; padding-top:2.5rem; min-height: calc(100vh - 200px);">
 
+    
   <form method="POST" action="{{ url_for('main.edit_itinerary', id=itinerary.id) }}" id="manual-form">
     {{ form.hidden_tag() }}
     <input type="hidden" name="plan_json" id="plan-json">
