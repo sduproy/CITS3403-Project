@@ -89,7 +89,12 @@
       <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
         data-tags="{{ itinerary.destination | lower }}" data-duration="week" data-likes="0" data-rating="0" data-date="{{ itinerary.created_at.strftime('%Y-%m-%d') }}">
         <div class="tp-card comm-card h-100">
-          <div class="comm-card-img" style="background: linear-gradient(135deg, var(--tp-teal), var(--tp-slate))">
+          <div class="comm-card-img" 
+                data-destination="{{ itinerary.destination }}"
+                style="background-color: var(--tp-teal);
+                        background-image: url('https://loremflickr.com/600/300/{{ itinerary.destination | urlencode }},travel?lock={{ itinerary.id }}');
+                        background-size: cover;
+                        background-position: center;">
             <span class="comm-region-badge">{{ itinerary.destination }}</span>
           </div>
           <div class="card-body d-flex flex-column">
@@ -511,6 +516,38 @@
 <script>
   document.querySelectorAll('.modal').forEach(function(m) {
     document.body.appendChild(m);
+  });
+</script>
+
+<script>
+  // Pull scenic photos from Wikimedia Commons by searching for
+  // "{destination} landscape". Beats /page/summary/ which returns
+  // country flags for major destinations. Keeps loremflickr as fallback.
+  document.querySelectorAll('.comm-card-img[data-destination]').forEach(function(el) {
+    var query = el.dataset.destination.split(',')[0].trim();
+    var url = 'https://commons.wikimedia.org/w/api.php?' + new URLSearchParams({
+      action: 'query',
+      format: 'json',
+      prop: 'imageinfo',
+      generator: 'search',
+      gsrsearch: query + ' landscape',
+      gsrnamespace: '6',
+      gsrlimit: '1',
+      iiprop: 'url',
+      iiurlwidth: '600',
+      origin: '*'
+    });
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var pages = (data.query || {}).pages || {};
+        var first = Object.values(pages)[0];
+        if (first && first.imageinfo && first.imageinfo[0]) {
+          var imgUrl = first.imageinfo[0].thumburl || first.imageinfo[0].url;
+          el.style.backgroundImage = "url('" + imgUrl + "')";
+        }
+      })
+      .catch(function() { /* loremflickr stays */ });
   });
 </script>
 {% endblock %}

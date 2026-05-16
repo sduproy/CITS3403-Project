@@ -22,6 +22,11 @@
     {% if itineraries %}
       {% for itinerary in itineraries %}
         <div class="tp-card mb-3">
+          <img class="card-img-top"
+            data-destination="{{ itinerary.destination }}"
+            src="https://loremflickr.com/600/200/?{{ itinerary.destination | urlencode }},travel?lock={{ itinerary.id }}"
+            alt="{{ itinerary.destination }}"
+            style="height: 140px; object-fit: cover;">
           <div class="card-body">
             <h5>{{ itinerary.destination }}</h5>
             <p class="tp-text-muted">{{ itinerary.arrive_time.strftime('%Y-%m-%d %H:%M') }} &rarr; {{ itinerary.leave_time.strftime('%Y-%m-%d %H:%M') }}</p>
@@ -111,4 +116,35 @@
     })
   })
 </script>
+
+<script>
+  // Same Commons upgrade as community.html — but dashboard uses <img>
+  // tags so we set .src instead of style.backgroundImage.
+  document.querySelectorAll('img[data-destination]').forEach(function(el) {
+    var query = el.dataset.destination.split(',')[0].trim();
+    var url = 'https://commons.wikimedia.org/w/api.php?' + new URLSearchParams({
+      action: 'query',
+      format: 'json',
+      prop: 'imageinfo',
+      generator: 'search',
+      gsrsearch: query + ' landscape',
+      gsrnamespace: '6',
+      gsrlimit: '1',
+      iiprop: 'url',
+      iiurlwidth: '600',
+      origin: '*'
+    });
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var pages = (data.query || {}).pages || {};
+        var first = Object.values(pages)[0];
+        if (first && first.imageinfo && first.imageinfo[0]) {
+          el.src = first.imageinfo[0].thumburl || first.imageinfo[0].url;
+        }
+      })
+      .catch(function() { /* loremflickr stays */ });
+  });
+</script>
+
 {% endblock %}
