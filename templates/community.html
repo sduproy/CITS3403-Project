@@ -54,9 +54,13 @@
         </select>
       </div>
       <!-- Sort -->
+      {# 'Newest' is first so the dropdown default matches the server's
+         ordering (Itinerary.query ... order_by(created_at.desc())). 'Most
+         liked' was removed: no likes feature exists on the model, the
+         attribute was always 0, and the only place it ever did anything
+         was the hardcoded demo cards that have since been deleted. #}
       <div class="col-6 col-md-3">
         <select id="comm-sort" class="form-select tp-select" onchange="applyFilters()" aria-label="Sort itineraries">
-          <option value="likes">Most liked</option>
           <option value="newest">Newest</option>
           <option value="rating">Top rated</option>
         </select>
@@ -99,8 +103,15 @@
          data-total="{{ pagination.total }}">
 
       {% for itinerary in itineraries %}
+      {# data-rating is the actual review average so the client-side
+         'Top rated' sort has something real to compare against. Without
+         this, every server-rendered card ties at 0 and clicking Top
+         rated does nothing visible until AJAX rebuilds the cards. #}
       <div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"
-        data-tags="{{ itinerary.destination | lower }}" data-duration="week" data-likes="0" data-rating="0" data-date="{{ itinerary.created_at.strftime('%Y-%m-%d') }}">
+        data-tags="{{ itinerary.destination | lower }}"
+        data-duration="week"
+        data-rating="{{ review_data[itinerary.id].avg or 0 }}"
+        data-date="{{ itinerary.created_at.strftime('%Y-%m-%d') }}">
         <div class="tp-card comm-card h-100">
           <div class="comm-card-img" 
                 data-destination="{{ itinerary.destination }}"
@@ -242,12 +253,14 @@
       }
     });
 
-    // Sort visible cards
+    // Sort visible cards. parseFloat for rating because review averages
+    // can be fractional (4.3, 3.5 ...) — parseInt would truncate to 4
+    // and 3 and ruin the order. Date sort uses arithmetic on Date
+    // objects which works because Date - Date is the millisecond gap.
     const grid = document.getElementById('cards-grid');
     visible.sort(function(a, b) {
-      if (sort === 'likes')  return parseInt(b.dataset.likes)  - parseInt(a.dataset.likes);
-      if (sort === 'rating') return parseInt(b.dataset.rating) - parseInt(a.dataset.rating);
-      if (sort === 'newest') return new Date(b.dataset.date)   - new Date(a.dataset.date);
+      if (sort === 'rating') return parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating);
+      if (sort === 'newest') return new Date(b.dataset.date)     - new Date(a.dataset.date);
       return 0;
     });
     visible.forEach(function(c) { grid.appendChild(c); });
@@ -265,7 +278,9 @@
   function clearFilters() {
     document.getElementById('comm-search').value = '';
     document.getElementById('comm-duration').value = '';
-    document.getElementById('comm-sort').value = 'likes';
+    // 'newest' matches the server's default ordering — same as the first
+    // <option> in the sort dropdown, so 'Clear filters' actually clears.
+    document.getElementById('comm-sort').value = 'newest';
     applyFilters();
   }
 
@@ -275,22 +290,6 @@
     applyFilters();
   }
 
-  /* ── Like Toggle ────────────────────────────────────────── */
-  function toggleLike(btn) {
-    const liked    = btn.dataset.liked === 'true';
-    const countEl  = btn.querySelector('span');
-    const count    = parseInt(countEl.textContent);
-
-    if (liked) {
-      btn.dataset.liked = 'false';
-      btn.classList.remove('liked');
-      countEl.textContent = count - 1;
-    } else {
-      btn.dataset.liked = 'true';
-      btn.classList.add('liked');
-      countEl.textContent = count + 1;
-    }
-  }
   /* ── Trending Destinations (AJAX / client-side rendering) ── */
   /* On page load, fetch the top destinations from /api/trending
      and dynamically render the chips. Server returns JSON only;
@@ -455,7 +454,6 @@
       '<div class="col-12 col-sm-6 col-lg-4 comm-card-wrap"' +
           ' data-tags="' + escapeHtml(it.destination.toLowerCase()) + '"' +
           ' data-duration="week"' +
-          ' data-likes="0"' +
           ' data-rating="' + (rd.avg || 0) + '"' +
           ' data-date="' + escapeHtml(it.created_at_iso) + '">' +
         '<div class="tp-card comm-card h-100">' +
