@@ -379,6 +379,13 @@ def manual_itinerary():
             return redirect(url_for("main.manual_itinerary"))
         is_public = int(request.form.get("is_public", 0))
         plan_json = request.form.get("plan_json", "")
+        try:
+            parsed = json.loads(plan_json)
+            if not isinstance(parsed.get('days'), list) or len(parsed['days']) == 0:
+                raise ValueError("No days")
+        except (json.JSONDecodeError, ValueError, AttributeError):
+            flash("Invalid itinerary data.", "error")
+            return redirect(url_for("main.manual_itinerary"))
 
         itinerary = Itinerary(
             user_id=current_user.id,
@@ -446,6 +453,12 @@ def edit_itinerary(id):
             return jsonify({'error': 'Invalid date or time format.'}), 400
         is_public = int(request.form.get("is_public", 0))
         plan_json = request.form.get("plan_json", "")
+        try:
+            parsed = json.loads(plan_json)
+            if not isinstance(parsed.get('days'), list) or len(parsed['days']) == 0:
+                raise ValueError("No days")
+        except (json.JSONDecodeError, ValueError, AttributeError):
+            return jsonify({'error': 'Invalid itinerary data.'}), 400
 
 
         itinerary.destination=destination
