@@ -35,7 +35,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import gemini
 import requests
 from extensions import db
-from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm, ReviewForm, ManualItineraryForm, EditItineraryForm, AdminDeleteReviewForm
+from forms import AdminDeleteItineraryForm, DeleteItineraryForm, DeleteUserForm, LoginForm, NewItineraryForm, RegisterForm, TogglePublicForm, ReviewForm, ManualItineraryForm, EditItineraryForm, AdminDeleteReviewForm, SaveItineraryForm
 
 from models import Itinerary, User, Review
 
@@ -240,7 +240,7 @@ def trip_details(id):
             plan = json.loads(itinerary.content)
         except json.JSONDecodeError:
             plan = None
-    return render_template("trip_details.html", itinerary=itinerary, plan=plan)
+    return render_template("trip_details.html", itinerary=itinerary, plan=plan, form=SaveItineraryForm())
 
 
 @main.route("/itinerary/new", methods=["POST"])
@@ -574,3 +574,27 @@ def destination_image():
 
     _pixabay_cache[destination] = url
     return jsonify({"url": url})
+
+
+
+@main.route("/itinerary/<int:id>/save", methods=["POST"])
+@login_required
+def save_itinerary(id):
+    original = db.session.get(Itinerary, id)
+    if original is None or not original.is_public:
+        abort(404)
+    if original.user_id == current_user.id:
+        flash("You already own this itinerary.", "error")
+        return redirect(url_for("main.trip_details", id=id))
+    copy = Itinerary(
+        user_id=current_user.id,
+        destination=original.destination,
+        arrive_time=original.arrive_time,
+        leave_time=original.leave_time,
+        content=original.content,
+        is_public=0,
+    )
+    db.session.add(copy)
+    db.session.commit()
+    flash("Itinerary saved to your dashboard.", "success")
+    return redirect(url_for("main.trip_details", id=copy.id))
