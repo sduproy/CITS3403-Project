@@ -85,14 +85,17 @@ echo "PIXABAY_API_KEY=<paste-from-pixabay-api-docs>" >> .env
 
 
 # 5. Just run. bootstrap_db() applies every migration on startup and
-#    seeds the admin user (admin / admin) on the first boot.
+#    seeds the admin user from your .env on the first boot.
 python -m flask --app app.py run
 ```
 
 `flask init-db` (the destructive reset) is still available if you want to nuke
 local state and start from scratch.
 
-**Default admin login** (seeded on first boot): username `admin`, password `admin`
+**Default admin login** (seeded on first boot from `.env.example`): username
+`admin`, password `admin`. The credentials live in three env vars
+(`ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`) — change them in `.env`
+to anything you like. If `ADMIN_PASSWORD` is unset, no admin is seeded.
 
 
 

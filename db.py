@@ -5,7 +5,8 @@ Two entry points:
 
   1. ``init_db()`` / ``flask init-db`` — DESTRUCTIVE: drops every table
      SQLAlchemy knows about, recreates them from the models, and
-     re-seeds the default admin (admin / admin). Used to reset state.
+     re-seeds the default admin (if ADMIN_PASSWORD is set in the env).
+     Used to reset state.
 
   2. ``bootstrap_db()`` — IDEMPOTENT: brings the schema up to the
      current Alembic head and seeds the admin only if the users table
@@ -20,7 +21,14 @@ root). ``bootstrap_db`` calls ``flask_migrate.upgrade()`` rather than
 migration scripts, and the Alembic version table stays in sync with
 the application's notion of "current schema". This is what lets
 ``flask db migrate`` autogenerate diffs correctly going forward.
+
+Admin credentials live in the environment (loaded from ``.env`` via
+python-dotenv at app startup), never in source. See ``.env.example``
+for the canonical setup; the literal "admin" / "admin" default for
+the uni-project markers is declared there, not here.
 """
+
+import os
 
 import click
 from flask_migrate import upgrade as alembic_upgrade
@@ -31,13 +39,27 @@ from models import User
 
 
 def _seed_default_admin():
-    """Insert the default admin user. Caller is responsible for ensuring
-    they aren't about to violate the username UNIQUE constraint."""
+    """Insert the default admin user, reading credentials from the env.
+
+    Credentials are pulled from ``ADMIN_USERNAME`` / ``ADMIN_EMAIL`` /
+    ``ADMIN_PASSWORD`` (loaded from ``.env`` by ``app.py`` via
+    python-dotenv). If ``ADMIN_PASSWORD`` is unset, no admin is seeded
+    — the deploy is responsible for either configuring one or creating
+    the first user some other way. Keeping the password out of source
+    means it isn't searchable in the GitHub history.
+
+    Caller is responsible for ensuring this isn't about to violate
+    the username UNIQUE constraint (bootstrap_db guards on "users
+    table is empty" before calling; init_db drops everything first).
+    """
+    admin_password = os.environ.get("ADMIN_PASSWORD")
+    if not admin_password:
+        return
     db.session.add(
         User(
-            username="admin",
-            email="admin@smartvoyage.local",
-            password_hash=generate_password_hash("admin", method="pbkdf2:sha256"),
+            username=os.environ.get("ADMIN_USERNAME", "admin"),
+            email=os.environ.get("ADMIN_EMAIL", "admin@smartvoyage.local"),
+            password_hash=generate_password_hash(admin_password, method="pbkdf2:sha256"),
             role="admin",
         )
     )
@@ -99,10 +121,17 @@ def bootstrap_db():
 def init_db_command():
     """Drop existing tables, replay every migration to HEAD, seed default admin."""
     init_db()
-    click.echo(
-        "Initialized the database. "
-        "Default admin seeded (username: admin, password: admin)."
-    )
+    if os.environ.get("ADMIN_PASSWORD"):
+        username = os.environ.get("ADMIN_USERNAME", "admin")
+        click.echo(
+            f"Initialized the database. Admin seeded (username: {username}; "
+            "password is the ADMIN_PASSWORD value from your .env)."
+        )
+    else:
+        click.echo(
+            "Initialized the database. No admin seeded — set "
+            "ADMIN_PASSWORD in .env and re-run if you want one."
+        )
 
 
 def init_app(app):
