@@ -174,45 +174,6 @@
 }
 
 
-/* ── Print Area ──────────────────────────────────────────── */
-.comm-print-area {
-  padding: 2rem;
-}
-
-
-/* ── Print Media Query ───────────────────────────────────── */
-@media print {
-  /* Hide everything except the print-area */
-  body > *:not(#print-area) {
-    display: none !important;
-  }
-
-  #print-area {
-    display: block !important;
-    padding: 0;
-  }
-
-  #print-area h2 {
-    font-size: 18pt;
-    margin-bottom: 0.5rem;
-  }
-
-  #print-area h4 {
-    font-size: 13pt;
-    margin-bottom: 0.25rem;
-  }
-
-  #print-area p {
-    font-size: 10pt;
-    line-height: 1.5;
-  }
-
-  .border-bottom {
-    border-bottom: 1px solid #ccc !important;
-  }
-}
-
-
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
   .comm-header {
