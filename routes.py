@@ -391,7 +391,6 @@ def delete_itinerary(id):
     if itinerary is not None:
         db.session.delete(itinerary)
         db.session.commit()
-    flash("Itinerary deleted.", "success")
     return jsonify({'success': True})
 
 #toggling itineraries to public and private
@@ -419,7 +418,6 @@ def admin_delete_itinerary(id):
     if itinerary is not None:
         db.session.delete(itinerary)
         db.session.commit()
-        flash("Itinerary deleted.", "success")
     return jsonify({'success': True})
 
 #admin access to deleting user accounts
@@ -435,7 +433,6 @@ def admin_delete_user(id):
             return jsonify({'error': 'Cannot delete an admin account'}), 403
         db.session.delete(user)
         db.session.commit()
-        flash(f"User {user.username} deleted.", "success")
     return jsonify({'success': True})
 
 #admin access for deleting reviews
@@ -449,7 +446,6 @@ def admin_delete_review(id):
     if review is not None:
         db.session.delete(review)
         db.session.commit()
-        flash("Review deleted.", "success")
     return jsonify({'success': True})
 
 
