@@ -31,7 +31,7 @@
   <div class="container">
     <div class="row align-items-center g-2 py-3">
       <!-- Search -->
-      <div class="col-12 col-md-5">
+      <div class="col-12 col-md-6">
         <div class="comm-search-wrap position-relative">
           <i class="bi bi-search comm-search-icon"></i>
           <input
@@ -64,12 +64,6 @@
           <option value="newest">Newest</option>
           <option value="rating">Top rated</option>
         </select>
-      </div>
-      <!-- Print button -->
-      <div class="col-12 col-md-1 text-md-end">
-        <button class="btn btn-tp-secondary w-100" onclick="printItinerary()" title="Print all visible itineraries">
-          <i class="bi bi-printer"></i>
-        </button>
       </div>
     </div>
   </div>
@@ -219,13 +213,6 @@
   </div>
 </div>
 
-<!-- ==================== PRINT AREA ==================== -->
-<div id="print-area" class="comm-print-area d-none">
-  <h2 class="tp-font-display mb-4">SmartVoyage — Community Itineraries</h2>
-  <p class="tp-text-muted mb-4">Printed from SmartVoyage on <span id="print-date"></span></p>
-  <div id="print-cards"></div>
-</div>
-
 {% endblock %}
 
 {% block scripts %}
@@ -322,36 +309,6 @@
       });
   });
 
-  /* ── Print Itinerary ────────────────────────────────────── */
-  function printItinerary() {
-    const visibleCards = document.querySelectorAll('.comm-card-wrap:not(.d-none)');
-    const printCards   = document.getElementById('print-cards');
-    const printArea    = document.getElementById('print-area');
-
-    document.getElementById('print-date').textContent = new Date().toLocaleDateString('en-AU', {
-      day: 'numeric', month: 'long', year: 'numeric'
-    });
-
-    printCards.innerHTML = '';
-    visibleCards.forEach(function(card) {
-      const title  = card.querySelector('.card-title')   ? card.querySelector('.card-title').textContent   : '';
-      const desc   = card.querySelector('.card-text')    ? card.querySelector('.card-text').textContent    : '';
-      const chips  = Array.from(card.querySelectorAll('.comm-chip')).map(function(c) { return c.textContent; }).join(' · ');
-      const stars  = card.querySelector('.tp-stars')     ? card.querySelector('.tp-stars').textContent     : '';
-      const author = card.querySelector('.fw-semibold')  ? card.querySelector('.fw-semibold').textContent  : '';
-
-      printCards.innerHTML +=
-        '<div class="mb-4 pb-3 border-bottom">' +
-          '<h4>' + title + '</h4>' +
-          '<p class="mb-1"><strong>By:</strong> ' + author + ' &nbsp;|&nbsp; <strong>Tags:</strong> ' + chips + ' &nbsp;|&nbsp; ' + stars + '</p>' +
-          '<p>' + desc + '</p>' +
-        '</div>';
-    });
-
-    printArea.classList.remove('d-none');
-    window.print();
-    printArea.classList.add('d-none');
-  }
 </script>
 <script>
   /* ──────────────────────────────────────────────────────────────────
