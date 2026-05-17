@@ -22,6 +22,10 @@
     {% if itineraries %}
       {% for itinerary in itineraries %}
         <div class="tp-card mb-3">
+
+{# Same two-tier image pattern as community.html: loremflickr is the
+   placeholder (locked per itinerary id so it stays the same), then
+   the script at the bottom upgrades it via /api/destination_image. #}
           <img class="card-img-top"
             data-destination="{{ itinerary.destination }}"
             src="https://loremflickr.com/600/200/{{ itinerary.destination | urlencode }},travel?lock={{ itinerary.id }}"
