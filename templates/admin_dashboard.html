@@ -129,6 +129,10 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // Reusable delete handler with confirm dialog, undo bar, and delayed fetch.
+    // formclass: CSS selector for the forms to intercept.
+    // msg: text shown in the undo bar.
+    // confirmMsg: text shown in the confirm dialog (user deletes override this dynamically).
     function DeleteUndo(formclass, msg, confirmMsg){
     document.querySelectorAll(formclass).forEach(function(form){
       form.addEventListener('submit', function(e){
