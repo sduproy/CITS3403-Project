@@ -272,7 +272,10 @@ def dashboard():
         toggle_form=TogglePublicForm(),
     )
 
-
+# Aggregates all itineraries, users and reviews for admin moderation.
+# Computes summary stats (totals, top destination) for the stat cards
+# at the top of the page. Only accessible to users with role == 'admin'
+# via the admin_required decorator.
 @main.route("/admin")
 @admin_required
 def admin_dashboard():
@@ -379,6 +382,8 @@ def new_itinerary():
     return redirect(url_for("main.index"))
 
 
+# Returns JSON so the dashboard JS can handle the response without a page reload.
+# The actual delete confirmation and undo timer live client-side in dashboard.html.
 @main.route("/itinerary/<int:id>/delete", methods=["POST"])
 @login_required
 def delete_itinerary(id):
@@ -391,10 +396,10 @@ def delete_itinerary(id):
     if itinerary is not None:
         db.session.delete(itinerary)
         db.session.commit()
-    flash("Itinerary deleted.", "success")
     return jsonify({'success': True})
 
-#toggling itineraries to public and private
+#Toggling itineraries to public and private
+# Returns JSON so the dashboard JS can update the button text in place without reloading.
 @main.route("/itinerary/<int:id>/toggle_public", methods=["POST"])
 @login_required
 def toggle_public(id):
@@ -419,7 +424,6 @@ def admin_delete_itinerary(id):
     if itinerary is not None:
         db.session.delete(itinerary)
         db.session.commit()
-        flash("Itinerary deleted.", "success")
     return jsonify({'success': True})
 
 #admin access to deleting user accounts
@@ -435,7 +439,6 @@ def admin_delete_user(id):
             return jsonify({'error': 'Cannot delete an admin account'}), 403
         db.session.delete(user)
         db.session.commit()
-        flash(f"User {user.username} deleted.", "success")
     return jsonify({'success': True})
 
 #admin access for deleting reviews
@@ -449,10 +452,15 @@ def admin_delete_review(id):
     if review is not None:
         db.session.delete(review)
         db.session.commit()
-        flash("Review deleted.", "success")
     return jsonify({'success': True})
 
 
+
+# Handles both GET (render empty form) and POST (validate and save).
+# Data comes in via request.form since the day/activity cards are built
+# dynamically in JS and serialised to plan_json before submission.
+# Server-side validates dates, leave > arrive, and that plan_json is
+# valid JSON with at least one day before saving.
 @main.route("/manual_itinerary", methods=["GET", "POST"])
 @login_required
 def manual_itinerary():
@@ -504,6 +512,9 @@ def user_profile(username):
     return render_template("user_profiles.html", profile_user=user, itineraries=itineraries)
 
 
+
+# AJAX endpoint used by the edit page to fetch existing itinerary data on load.
+# Returns the itinerary fields as JSON so the JS can pre-populate the edit form.
 @main.route("/itinerary/<int:id>/json")
 @login_required
 def itinerary_json(id):
@@ -525,6 +536,10 @@ def itinerary_json(id):
 
 
 
+# GET: renders the edit form shell — JS fetches the existing itinerary
+# data from /itinerary/<id>/json and pre-populates the form client-side.
+# POST: validates and saves the updated data, returns JSON so the JS
+# can redirect without a page reload. Only the owner can edit.
 @main.route("/itinerary/<int:id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_itinerary(id):
@@ -666,7 +681,8 @@ def destination_image():
     return jsonify({"url": url})
 
 
-
+# Copies a public itinerary to the current user's dashboard as a private copy.
+# Users cannot save their own itineraries. Only public itineraries can be saved.
 @main.route("/itinerary/<int:id>/save", methods=["POST"])
 @login_required
 def save_itinerary(id):

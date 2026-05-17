@@ -47,7 +47,9 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-    fetch('/itinerary/{{ itinerary.id }}/json')
+        // On page load, fetch the existing itinerary data from the JSON endpoint
+        // and use it to pre-populate the form fields and rebuild the day/activity cards.
+        fetch('/itinerary/{{ itinerary.id }}/json')
         .then(response => response.json())
         .then(data => {
             document.getElementById('destination').value = data.destination
