@@ -107,6 +107,13 @@
         data-rating="{{ review_data[itinerary.id].avg or 0 }}"
         data-date="{{ itinerary.created_at.strftime('%Y-%m-%d') }}">
         <div class="tp-card comm-card h-100">
+
+{# Card image: loremflickr provides an instant placeholder (locked to
+   the itinerary id so the image stays the same across refreshes).
+   JS at the bottom of this file then upgrades it to a higher-quality
+   Pixabay photo via /api/destination_image. If Pixabay has no hit,
+   the loremflickr image stays. background-color is the final fallback
+   if both image sources fail to load. #}
           <div class="comm-card-img" 
                 data-destination="{{ itinerary.destination }}"
                 style="background-color: var(--tp-teal);
