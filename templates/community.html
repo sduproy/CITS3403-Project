@@ -518,6 +518,15 @@
       return btn;
     }
 
+    // A Back button for users who don't want to hunt for the previous
+    // page number. Sits at the left so the bar reads Back ← pages → Next,
+    // matching what most users expect. Disabled (greyed out) on page 1.
+    container.appendChild(makeButton('← Back', state.page - 1, {
+      primary: true,
+      disabled: !state.has_prev,
+      ariaLabel: 'Previous page'
+    }));
+
     // One button per page. Fine for the seed dataset; if the public
     // itinerary count ever grows past, say, ~12 pages, swap this for an
     // ellipsised window so the bar doesn't overflow.
